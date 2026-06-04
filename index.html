@@ -237,6 +237,7 @@ header{border-bottom:1px solid var(--border);padding:0 1.5rem;height:60px;displa
   <div class="logo"><div class="ldot"></div>Print<span>Archive</span></div>
   <div class="hbtns">
     <button class="hbtn blue" id="syncBtn" onclick="syncNow()">🔄 Sinkron</button>
+    <button class="hbtn" id="reloadImgBtn" onclick="reloadAllImages()" title="Muat ulang semua gambar">🖼 Reload Gambar</button>
     <button class="hbtn" onclick="toggleCfg()">⚙ Konfigurasi</button>
   </div>
 </header>
@@ -531,18 +532,51 @@ async function syncNow(){
   const btn=document.getElementById('syncBtn');
   btn.disabled=true;
   showSyncInfo('Mengambil data dari Telegram...');
+
+  // Clear URL caches agar gambar di-reload ulang
+  Object.keys(urlCache).forEach(k=>delete urlCache[k]);
+  urlFailCache.clear();
+
   try{
     const remote=await pullArchive();
-    if(remote&&Array.isArray(remote)){
-      archive=remote.map(e=>({...e,tok:c.tok}));
+    if(remote&&Array.isArray(remote)&&remote.length>0){
+      archive=remote.map(e=>({...e,tok:e.tok||c.tok}));
       saveLoc();
       renderGrid();
       toast(`✅ Sinkron OK — ${archive.length} arsip dimuat.`,'ok');
+    }else if(remote&&Array.isArray(remote)&&remote.length===0){
+      toast('Telegram mengembalikan data kosong (0 arsip).','inf');
     }else{
-      toast('Tidak ada data di Telegram. Data lokal dipertahankan.','inf');
+      // Force rescan jika pull gagal
+      showSyncInfo('Mencari arsip di riwayat Telegram...');
+      const scanned=await scanUpdates(c.tok,c.cid);
+      if(scanned&&Array.isArray(scanned)&&scanned.length>0){
+        archive=scanned.map(e=>({...e,tok:c.tok}));
+        saveLoc();renderGrid();
+        toast(`✅ Ditemukan ${archive.length} arsip dari riwayat Telegram!`,'ok');
+      }else{
+        toast('⚠️ Tidak ada data di Telegram. Pastikan Bot Token & Chat ID benar.','inf');
+        // Show diagnostic
+        await diagnoseTelegram(c.tok,c.cid);
+      }
     }
-  }catch(e){toast('❌ Gagal sinkron: '+e.message,'err');}
+  }catch(e){toast('❌ Gagal sinkron: '+e.message,'err');console.error(e);}
   finally{btn.disabled=false;hideSyncInfo();}
+}
+
+// Diagnostic: test if bot token and chat are valid
+async function diagnoseTelegram(tok,cid){
+  try{
+    const r=await fetch(`https://api.telegram.org/bot${tok}/getMe`);
+    const j=await r.json();
+    if(!j.ok){
+      toast('❌ Bot Token tidak valid! Cek kembali di konfigurasi.','err');
+      return;
+    }
+    toast(`Bot OK: @${j.result.username}. Cek Chat ID apakah benar.`,'inf');
+  }catch(e){
+    toast('❌ Tidak bisa konek ke Telegram. Cek koneksi internet.','err');
+  }
 }
 
 function showSyncInfo(msg){
@@ -648,14 +682,25 @@ function resetForm(){
    RESOLVE FILE URL (Telegram)
 ═══════════════════════════════════════════ */
 const urlCache={};
+const urlFailCache=new Set();
 async function fileUrl(tok,fid){
+  if(!tok||!fid)return null;
   if(urlCache[fid])return urlCache[fid];
+  if(urlFailCache.has(fid))return null; // don't retry known failures
   try{
-    const r=await(await fetch(`https://api.telegram.org/bot${tok}/getFile?file_id=${fid}`)).json();
-    if(!r.ok)return null;
-    const u=`https://api.telegram.org/file/bot${tok}/${r.result.file_path}`;
+    const r=await fetch(`https://api.telegram.org/bot${tok}/getFile?file_id=${fid}`);
+    if(!r.ok){urlFailCache.add(fid);return null;}
+    const j=await r.json();
+    if(!j.ok){
+      console.warn('getFile failed:',j.description,'file_id:',fid.slice(0,20)+'...');
+      urlFailCache.add(fid);return null;
+    }
+    const u=`https://api.telegram.org/file/bot${tok}/${j.result.file_path}`;
     urlCache[fid]=u;return u;
-  }catch{return null;}
+  }catch(e){
+    console.warn('fileUrl error:',e.message);
+    return null;
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -710,7 +755,50 @@ async function loadCardImg(entry,idx){
   if(!el)return;
   const bdg=document.querySelector(`#ci_${entry.id} .badge`);
   if(bdg)bdg.textContent=`${idx+1} / ${fids.length}`;
-  try{const u=await fileUrl(entry.tok||cfg().tok,fids[idx]);if(u&&el){el.src=u;el.classList.remove('hide');}}catch(_){}
+  const container=document.getElementById(`ci_${entry.id}`);
+  // Show skeleton/loading state
+  if(container&&!el.src){
+    container.style.background='var(--s2)';
+    const loadEl=container.querySelector('.card-load-txt');
+    if(!loadEl){
+      const lt=document.createElement('div');
+      lt.className='card-load-txt';
+      lt.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);font-family:var(--mono);flex-direction:column;gap:5px;';
+      lt.innerHTML='<div class="spin spin-w"></div><span>Memuat...</span>';
+      container.appendChild(lt);
+    }
+  }
+  try{
+    const u=await fileUrl(entry.tok||cfg().tok,fids[idx]);
+    if(u&&el){
+      el.onload=()=>{
+        el.classList.remove('hide');
+        if(container){
+          container.style.background='';
+          const lt=container.querySelector('.card-load-txt');
+          if(lt)lt.remove();
+        }
+      };
+      el.onerror=()=>{
+        if(container){
+          const lt=container.querySelector('.card-load-txt');
+          if(lt){lt.innerHTML='<span style="font-size:1.2rem">🖼️</span><span>Gagal muat</span>';}
+        }
+      };
+      el.src=u;
+    } else {
+      if(container){
+        const lt=container.querySelector('.card-load-txt');
+        if(lt){lt.innerHTML='<span style="font-size:1.2rem">⚠️</span><span>Token/ID salah?</span>';}
+      }
+    }
+  }catch(err){
+    console.warn('loadCardImg error',err);
+    if(container){
+      const lt=container.querySelector('.card-load-txt');
+      if(lt){lt.innerHTML='<span style="font-size:1.2rem">❌</span><span>Error</span>';}
+    }
+  }
 }
 function navCard(e,id,dir){
   e.stopPropagation();
@@ -1014,6 +1102,37 @@ function toast(msg,type='inf'){
 function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
 /* ═══════════════════════════════════════════
+   RELOAD ALL IMAGES
+═══════════════════════════════════════════ */
+async function reloadAllImages(){
+  // Clear all caches
+  Object.keys(urlCache).forEach(k=>delete urlCache[k]);
+  urlFailCache.clear();
+  const btn=document.getElementById('reloadImgBtn');
+  btn.disabled=true;btn.textContent='⏳ Memuat...';
+  toast('🖼 Memuat ulang semua gambar...','inf');
+  // Reset all card images
+  archive.forEach(e=>{
+    const el=document.getElementById(`ci_${e.id}_0`);
+    if(el){el.src='';el.classList.add('hide');}
+    const container=document.getElementById(`ci_${e.id}`);
+    if(container){
+      const lt=container.querySelector('.card-load-txt');
+      if(lt)lt.remove();
+    }
+  });
+  // Reload
+  const list=filtered();
+  let loaded=0;
+  for(const e of list){
+    await loadCardImg(e,cImgIdx[e.id]||0);
+    loaded++;
+  }
+  btn.disabled=false;btn.textContent='🖼 Reload Gambar';
+  toast(`✅ ${loaded} gambar diperbarui.`,'ok');
+}
+
+/* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
 async function init(){
@@ -1034,9 +1153,16 @@ async function init(){
       if(remote&&Array.isArray(remote)&&remote.length>=archive.length){
         archive=remote.map(e=>({...e,tok:e.tok||c.tok}));
         saveLoc();renderGrid();
+        // Clear fail cache so images load fresh
+        urlFailCache.clear();
+      } else if(!remote && archive.length===0){
+        // No data anywhere — show hint
+        toast('💡 Tekan 🔄 Sinkron untuk memuat arsip dari Telegram.','inf');
       }
     }catch(_){}
     finally{hideSyncInfo();}
+  } else if(archive.length===0){
+    toast('⚙ Isi konfigurasi Telegram untuk mulai menggunakan arsip.','inf');
   }
 }
 
