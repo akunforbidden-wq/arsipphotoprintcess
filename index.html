@@ -1,2147 +1,1046 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PrintArchive — Arsip Foto Pemasangan</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<!-- JSZip for ZIP download -->
+<title>PrintArchive</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-  :root {
-    --bg: #0e0e0e;
-    --surface: #181818;
-    --surface2: #222222;
-    --border: #2e2e2e;
-    --accent: #f0c040;
-    --accent2: #e87040;
-    --text: #f0ece4;
-    --text-dim: #888;
-    --text-muted: #555;
-    --green: #4ade80;
-    --red: #f87171;
-    --blue: #60a5fa;
-    --radius: 10px;
-    --font-mono: 'DM Mono', monospace;
-    --font-display: 'Syne', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-  }
+:root{
+  --bg:#0e0e0e;--surface:#181818;--s2:#222;--border:#2e2e2e;
+  --accent:#f0c040;--a2:#e87040;--text:#f0ece4;--dim:#888;
+  --muted:#555;--green:#4ade80;--red:#f87171;--blue:#60a5fa;
+  --r:10px;--mono:'DM Mono',monospace;--disp:'Syne',sans-serif;--body:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* HEADER */
+header{border-bottom:1px solid var(--border);padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(14,14,14,.96);backdrop-filter:blur(12px);z-index:100}
+.logo{font-family:var(--disp);font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.logo span{color:var(--accent)}
+.ldot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.hbtns{display:flex;gap:6px;align-items:center}
+.hbtn{background:var(--s2);border:1px solid var(--border);color:var(--dim);padding:6px 12px;border-radius:6px;font-family:var(--mono);font-size:.73rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.hbtn:hover{border-color:var(--accent);color:var(--accent)}
+.hbtn.blue{color:var(--blue)}
+.hbtn.blue:hover{border-color:var(--blue)}
+.hbtn:disabled{opacity:.4;cursor:not-allowed}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    min-height: 100vh;
-  }
+/* CONTAINER */
+.wrap{max-width:1280px;margin:0 auto;padding:1.5rem}
 
-  /* ── HEADER ── */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 0 2rem;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    background: rgba(14,14,14,0.95);
-    backdrop-filter: blur(10px);
-    z-index: 100;
-  }
-  .logo {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 1.25rem;
-    letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .logo span { color: var(--accent); }
-  .logo-dot {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50% { opacity:.4; transform:scale(0.7); }
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .config-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: .75rem;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .config-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .sync-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--blue);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: .75rem;
-    cursor: pointer;
-    transition: all .2s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .sync-btn:hover { border-color: var(--blue); }
-  .sync-btn:disabled { opacity:.4; cursor:not-allowed; }
-  .sync-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--blue);
-    animation: pulse 1.5s infinite;
-  }
+/* CONFIG PANEL */
+.cfg-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;display:none}
+.cfg-panel.open{display:block;animation:slideDown .2s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.cfg-title{font-family:var(--disp);font-weight:700;font-size:.95rem;margin-bottom:1rem;color:var(--accent)}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.cfg-grid{grid-template-columns:1fr}}
+.flabel{display:block;font-family:var(--mono);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.finput{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 13px;border-radius:6px;font-family:var(--mono);font-size:.83rem;outline:none;transition:border-color .2s}
+.finput:focus{border-color:var(--accent)}
+.cfg-note{margin-top:1rem;font-size:.75rem;color:var(--dim);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.18);border-radius:6px;padding:10px 14px;line-height:1.7}
+.cfg-note b{color:var(--blue)}
+.savebtn{margin-top:1rem;background:var(--accent);color:#000;border:none;padding:9px 22px;border-radius:6px;font-family:var(--disp);font-weight:700;font-size:.83rem;cursor:pointer;transition:opacity .2s}
+.savebtn:hover{opacity:.85}
 
-  /* ── MAIN LAYOUT ── */
-  .container {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
+/* ALERTS */
+.alert{padding:11px 15px;border-radius:8px;font-size:.83rem;margin-bottom:1.2rem;display:none;align-items:center;gap:8px}
+.alert.show{display:flex}
+.alert-warn{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+.alert-info{background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.2);color:var(--blue)}
 
-  /* ── CONFIG PANEL ── */
-  .config-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    display: none;
-  }
-  .config-panel.open { display: block; animation: slideDown .2s ease; }
-  @keyframes slideDown {
-    from { opacity:0; transform:translateY(-8px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
-  .config-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .config-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-  @media(max-width:640px) { .config-grid { grid-template-columns: 1fr; } }
-  .field-label {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: .7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
-  .field-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: .85rem;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .field-input:focus { border-color: var(--accent); }
-  .config-note {
-    margin-top: .75rem;
-    font-size: .75rem;
-    color: var(--text-muted);
-    background: rgba(96,165,250,.06);
-    border: 1px solid rgba(96,165,250,.15);
-    border-radius: 6px;
-    padding: 10px 14px;
-    line-height: 1.6;
-  }
-  .config-note strong { color: var(--blue); }
-  .save-config-btn {
-    margin-top: 1rem;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 6px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: .85rem;
-    cursor: pointer;
-    transition: opacity .2s;
-  }
-  .save-config-btn:hover { opacity: .85; }
+/* UPLOAD CARD */
+.ucard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem}
+.ucard-title{font-family:var(--disp);font-weight:700;font-size:1rem;margin-bottom:1.1rem}
+.frow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem;margin-bottom:.9rem}
+@media(max-width:720px){.frow{grid-template-columns:1fr}}
+.frow1{grid-template-columns:1fr}
+.locwrap{position:relative}
+.gpsbtn{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:var(--s2);border:1px solid var(--border);color:var(--accent);border-radius:5px;padding:3px 8px;font-size:.7rem;cursor:pointer;font-family:var(--mono);white-space:nowrap;transition:all .2s}
+.gpsbtn:hover{border-color:var(--accent)}
+.gpsbtn:disabled{opacity:.5;cursor:not-allowed}
+#fLocation{padding-right:88px}
 
-  /* ── UPLOAD CARD ── */
-  .upload-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  .upload-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.05rem;
-    margin-bottom: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  @media(max-width:768px) { .form-row { grid-template-columns: 1fr; } }
+/* DROPZONE */
+.dropzone{border:2px dashed var(--border);border-radius:var(--r);padding:1.8rem;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:.9rem;position:relative}
+.dropzone:hover,.dropzone.over{border-color:var(--accent);background:rgba(240,192,64,.04)}
+.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-icon{font-size:1.8rem;margin-bottom:.4rem}
+.drop-txt{color:var(--dim);font-size:.88rem}
+.drop-txt b{color:var(--accent)}
 
-  /* Drop zone */
-  .drop-zone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all .25s;
-    margin-bottom: 1rem;
-    position: relative;
-  }
-  .drop-zone:hover, .drop-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(240,192,64,.04);
-  }
-  .drop-zone input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer;
-  }
-  .drop-icon { font-size: 2rem; margin-bottom: .5rem; }
-  .drop-text { color: var(--text-dim); font-size: .9rem; }
-  .drop-text strong { color: var(--accent); }
+/* PREVIEWS */
+.prev-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:.9rem}
+.prev-th{position:relative;width:76px;height:76px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.prev-th img{width:100%;height:100%;object-fit:cover}
+.prev-th button{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.75);color:var(--red);border:none;border-radius:3px;width:17px;height:17px;font-size:.65rem;line-height:17px;text-align:center;cursor:pointer}
 
-  /* Preview thumbnails */
-  .preview-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 1rem;
-  }
-  .preview-thumb {
-    position: relative;
-    width: 80px; height: 80px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-  .preview-thumb img { width:100%; height:100%; object-fit:cover; }
-  .preview-thumb .remove-thumb {
-    position: absolute; top:2px; right:2px;
-    background: rgba(0,0,0,.7);
-    color: var(--red);
-    border: none; border-radius: 4px;
-    width: 18px; height: 18px;
-    font-size: .7rem; line-height: 18px;
-    text-align: center; cursor: pointer;
-  }
+/* PROGRESS */
+.prog-wrap{background:var(--bg);border-radius:4px;height:5px;margin:8px 0;overflow:hidden;display:none}
+.prog-wrap.show{display:block}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--a2));border-radius:4px;transition:width .3s;width:0}
+.prog-lbl{font-size:.73rem;color:var(--muted);margin-bottom:.5rem}
 
-  .upload-btn {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    padding: 12px 28px;
-    border-radius: 8px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: .9rem;
-    cursor: pointer;
-    transition: opacity .2s, transform .1s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .upload-btn:hover { opacity: .88; }
-  .upload-btn:active { transform: scale(.97); }
-  .upload-btn:disabled { opacity: .4; cursor: not-allowed; }
+.ubtn{background:var(--accent);color:#000;border:none;padding:11px 26px;border-radius:8px;font-family:var(--disp);font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .2s,transform .1s;display:inline-flex;align-items:center;gap:7px}
+.ubtn:hover{opacity:.88}
+.ubtn:active{transform:scale(.97)}
+.ubtn:disabled{opacity:.4;cursor:not-allowed}
 
-  /* Progress */
-  .progress-bar-wrap {
-    background: var(--bg);
-    border-radius: 4px;
-    height: 6px;
-    margin: 10px 0;
-    overflow: hidden;
-    display: none;
-  }
-  .progress-bar-wrap.visible { display: block; }
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: 4px;
-    transition: width .3s ease;
-    width: 0%;
-  }
+/* FILTERS */
+.filters{display:flex;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap;align-items:center}
+.srchwrap{flex:1;min-width:180px;position:relative}
+.srch{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 13px 8px 34px;border-radius:6px;font-size:.83rem;outline:none;transition:border-color .2s}
+.srch:focus{border-color:var(--accent)}
+.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.9rem}
+.fbtn{background:var(--surface);border:1px solid var(--border);color:var(--dim);padding:8px 12px;border-radius:6px;font-size:.83rem;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:var(--mono)}
+.fbtn:hover{border-color:var(--accent);color:var(--accent)}
+.fbtn.blue-b{border-color:rgba(96,165,250,.35);color:var(--blue)}
+.fbtn.blue-b:hover{border-color:var(--blue);background:rgba(96,165,250,.06)}
+.fbtn:disabled{opacity:.4;cursor:not-allowed}
 
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-size: .85rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 9999;
-    transform: translateY(80px);
-    opacity: 0;
-    transition: all .3s ease;
-    max-width: 340px;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.success { border-color: var(--green); }
-  .toast.error { border-color: var(--red); }
-  .toast.info { border-color: var(--blue); }
+/* STATS */
+.stats{display:flex;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap}
+.chip{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 13px;font-family:var(--mono);font-size:.73rem;color:var(--dim)}
+.chip b{color:var(--accent)}
 
-  /* ── FILTERS ── */
-  .filters-bar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .search-wrap {
-    flex: 1;
-    min-width: 200px;
-    position: relative;
-  }
-  .search-input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 9px 14px 9px 36px;
-    border-radius: 6px;
-    font-family: var(--font-body);
-    font-size: .85rem;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .search-input:focus { border-color: var(--accent); }
-  .search-icon {
-    position: absolute; left: 11px; top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    pointer-events: none;
-  }
-  .sort-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 9px 12px;
-    border-radius: 6px;
-    font-size: .85rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all .2s;
-  }
-  .sort-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* GRID */
+.gh{font-family:var(--disp);font-size:.68rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.1rem}
 
-  /* Download all ZIP button */
-  .dl-all-btn {
-    background: var(--surface);
-    border: 1px solid rgba(96,165,250,.4);
-    color: var(--blue);
-    padding: 9px 14px;
-    border-radius: 6px;
-    font-size: .82rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all .2s;
-    font-family: var(--font-mono);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .dl-all-btn:hover { border-color: var(--blue); background: rgba(96,165,250,.06); }
-  .dl-all-btn:disabled { opacity:.4; cursor:not-allowed; }
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;position:relative}
+.card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.card-imgs{position:relative;height:175px;background:var(--bg);overflow:hidden}
+.card-imgs img{position:absolute;width:100%;height:100%;object-fit:cover;transition:opacity .3s}
+.card-imgs img.hide{opacity:0}
+.badge{position:absolute;bottom:7px;right:7px;background:rgba(0,0,0,.78);color:var(--accent);font-family:var(--mono);font-size:.68rem;padding:2px 7px;border-radius:4px;backdrop-filter:blur(4px)}
+.nav-row{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 7px;opacity:0;transition:opacity .2s}
+.card:hover .nav-row{opacity:1}
+.navbtn{background:rgba(0,0,0,.65);color:#fff;border:none;width:27px;height:27px;border-radius:50%;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center}
+/* Card top action buttons */
+.card-acts{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:7px;opacity:0;transition:opacity .2s;pointer-events:none}
+.card:hover .card-acts{opacity:1;pointer-events:all}
+.cact{border:none;border-radius:5px;padding:4px 8px;font-size:.66rem;cursor:pointer;font-family:var(--mono);backdrop-filter:blur(6px)}
+.cact-del{background:rgba(248,113,113,.88);color:#fff}
+.cact-edit{background:rgba(240,192,64,.9);color:#000}
+.cact-dl{background:rgba(96,165,250,.88);color:#fff}
+.cact-grp{display:flex;gap:4px}
+.card-body{padding:.9rem}
+.card-name{font-family:var(--disp);font-weight:700;font-size:.97rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-loc{font-size:.78rem;color:var(--dim);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-note{font-size:.73rem;color:var(--muted);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+.card-foot{display:flex;justify-content:space-between;align-items:center}
+.card-date{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
 
-  /* ── STATS BAR ── */
-  .stats-bar {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-  }
-  .stat-chip {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 14px;
-    font-family: var(--font-mono);
-    font-size: .75rem;
-    color: var(--text-dim);
-  }
-  .stat-chip strong { color: var(--accent); }
+/* EMPTY */
+.empty{text-align:center;padding:4rem 2rem;color:var(--muted);display:none}
+.empty.show{display:block}
+.empty-ico{font-size:3rem;margin-bottom:.8rem;opacity:.35}
+.empty-ttl{font-family:var(--disp);font-weight:700;font-size:1.1rem;margin-bottom:.4rem;color:var(--dim)}
 
-  /* ── GRID ── */
-  .grid-header {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: .7rem;
-    margin-bottom: 1rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .archive-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1.2rem;
-  }
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px 18px;font-size:.83rem;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--green)}
+.toast.err{border-color:var(--red)}
+.toast.inf{border-color:var(--blue)}
 
-  /* ── CARD ── */
-  .archive-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform .2s, border-color .2s, box-shadow .2s;
-    position: relative;
-  }
-  .archive-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--accent);
-    box-shadow: 0 8px 32px rgba(0,0,0,.4);
-  }
-  .card-images {
-    position: relative;
-    height: 180px;
-    background: var(--bg);
-    overflow: hidden;
-  }
-  .card-images img {
-    position: absolute;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    transition: opacity .3s;
-  }
-  .card-images img.hidden { opacity: 0; }
-  .card-count-badge {
-    position: absolute;
-    bottom: 8px; right: 8px;
-    background: rgba(0,0,0,.75);
-    color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: .7rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    backdrop-filter: blur(4px);
-  }
-  .card-img-nav {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 8px;
-    opacity: 0;
-    transition: opacity .2s;
-  }
-  .archive-card:hover .card-img-nav { opacity: 1; }
-  .img-nav-btn {
-    background: rgba(0,0,0,.6);
-    color: #fff;
-    border: none;
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-  }
-  .card-body { padding: 1rem; }
-  .card-customer {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1rem;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-desc {
-    font-size: .8rem;
-    color: var(--text-dim);
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-note {
-    font-size: .75rem;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-style: italic;
-  }
-  .card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .card-date {
-    font-family: var(--font-mono);
-    font-size: .7rem;
-    color: var(--text-muted);
-  }
-  /* Card action buttons (top overlay) */
-  .card-actions {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    opacity: 0;
-    transition: opacity .2s;
-  }
-  .archive-card:hover .card-actions { opacity: 1; }
-  .card-act-btn {
-    border: none;
-    border-radius: 5px;
-    padding: 4px 9px;
-    font-size: .68rem;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    backdrop-filter: blur(6px);
-  }
-  .card-del-btn {
-    background: rgba(248,113,113,.85);
-    color: #fff;
-  }
-  .card-edit-btn {
-    background: rgba(240,192,64,.85);
-    color: #000;
-  }
-  .card-dl-btn {
-    background: rgba(96,165,250,.85);
-    color: #fff;
-  }
+/* SPINNER */
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,.25);border-top-color:#000;border-radius:50%;animation:rot .6s linear infinite;vertical-align:middle}
+.spin-w{border-color:rgba(255,255,255,.2);border-top-color:#fff}
+@keyframes rot{to{transform:rotate(360deg)}}
 
-  /* ── EMPTY STATE ── */
-  .empty-state {
-    text-align: center;
-    padding: 5rem 2rem;
-    color: var(--text-muted);
-    display: none;
-  }
-  .empty-state.visible { display: block; }
-  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .4; }
-  .empty-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-bottom: .5rem;
-    color: var(--text-dim);
-  }
+/* OVERLAY BASE */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px)}
+.ov.open{display:flex}
+.obox{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-height:92vh;overflow-y:auto;animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.ohdr{display:flex;justify-content:space-between;align-items:center;padding:1.1rem 1.4rem;border-bottom:1px solid var(--border)}
+.ottl{font-family:var(--disp);font-weight:700;font-size:1.05rem}
+.ocls{background:var(--s2);border:1px solid var(--border);color:var(--dim);width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ocls:hover{border-color:var(--red);color:var(--red)}
+.obdy{padding:1.4rem}
 
-  /* ── MODAL / LIGHTBOX ── */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.9);
-    z-index: 500;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    backdrop-filter: blur(8px);
-  }
-  .modal-overlay.open { display: flex; }
-  .modal-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    max-width: 900px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: modalIn .2s ease;
-  }
-  @keyframes modalIn {
-    from { opacity:0; transform:scale(.96); }
-    to   { opacity:1; transform:scale(1); }
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .modal-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-  .modal-close {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    width: 32px; height: 32px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all .2s;
-  }
-  .modal-close:hover { border-color: var(--red); color: var(--red); }
-  .modal-body { padding: 1.5rem; }
-  .modal-main-img {
-    width: 100%;
-    max-height: 440px;
-    object-fit: contain;
-    border-radius: 8px;
-    background: var(--bg);
-    cursor: zoom-in;
-  }
-  .modal-thumbnails {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 1rem 0;
-  }
-  .modal-thumb {
-    width: 64px; height: 64px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 2px solid var(--border);
-    cursor: pointer;
-    transition: border-color .2s;
-  }
-  .modal-thumb.active { border-color: var(--accent); }
-  .modal-meta-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .75rem;
-    margin-top: 1rem;
-  }
-  @media(max-width:500px) { .modal-meta-grid { grid-template-columns: 1fr; } }
-  .meta-label {
-    font-family: var(--font-mono);
-    font-size: .65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 3px;
-  }
-  .meta-value {
-    font-size: .9rem;
-    color: var(--text);
-    font-weight: 500;
-  }
-  .modal-action-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 1.2rem;
-    flex-wrap: wrap;
-  }
-  .modal-edit-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--accent);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: .8rem;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    transition: all .2s;
-  }
-  .modal-edit-btn:hover { border-color: var(--accent); }
-  .modal-dl-btn {
-    background: var(--surface2);
-    border: 1px solid rgba(96,165,250,.4);
-    color: var(--blue);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: .8rem;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    transition: all .2s;
-  }
-  .modal-dl-btn:hover { border-color: var(--blue); }
-  .modal-del-btn {
-    background: rgba(248,113,113,.1);
-    border: 1px solid rgba(248,113,113,.3);
-    color: var(--red);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: .8rem;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    transition: all .2s;
-  }
-  .modal-del-btn:hover { background: rgba(248,113,113,.2); }
+/* MODAL LIGHTBOX */
+#modalOv{z-index:500}
+#modalOv .obox{max-width:860px}
+.modal-img{width:100%;max-height:420px;object-fit:contain;border-radius:8px;background:var(--bg);cursor:zoom-in}
+.thumbs{display:flex;gap:7px;flex-wrap:wrap;margin:1rem 0}
+.thumb{width:62px;height:62px;object-fit:cover;border-radius:6px;border:2px solid var(--border);cursor:pointer;transition:border-color .2s}
+.thumb.act{border-color:var(--accent)}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:.9rem}
+@media(max-width:480px){.meta-grid{grid-template-columns:1fr}}
+.ml{font-family:var(--mono);font-size:.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.mv{font-size:.88rem;font-weight:500}
+.mact-row{display:flex;gap:7px;margin-top:1.1rem;flex-wrap:wrap}
+.mbtn{border:1px solid var(--border);background:var(--s2);padding:7px 14px;border-radius:6px;font-size:.78rem;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.mbtn.gold{color:var(--accent);border-color:rgba(240,192,64,.35)}
+.mbtn.gold:hover{border-color:var(--accent)}
+.mbtn.blu{color:var(--blue);border-color:rgba(96,165,250,.35)}
+.mbtn.blu:hover{border-color:var(--blue)}
+.mbtn.red{color:var(--red);background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3)}
+.mbtn.red:hover{background:rgba(248,113,113,.18)}
 
-  /* Spinner */
-  .spinner {
-    display: inline-block;
-    width: 16px; height: 16px;
-    border: 2px solid rgba(0,0,0,.3);
-    border-top-color: #000;
-    border-radius: 50%;
-    animation: spin .6s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner-blue {
-    border-color: rgba(96,165,250,.3);
-    border-top-color: var(--blue);
-  }
+/* EDIT MODAL */
+#editOv{z-index:600}
+#editOv .obox{max-width:700px}
+.epl{font-family:var(--mono);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:1.1rem 0 .55rem}
+/* Edit photo grid */
+.epg{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:.8rem}
+.ep{position:relative;width:88px;height:88px;border-radius:7px;overflow:hidden;border:2px solid var(--border);transition:border-color .2s;flex-shrink:0}
+.ep img{width:100%;height:100%;object-fit:cover}
+.ep-del{position:absolute;inset:0;background:rgba(248,113,113,0);border:none;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;transition:all .2s}
+.ep:hover .ep-del{background:rgba(248,113,113,.78);color:#fff}
+.ep.marked{border-color:var(--red);opacity:.5}
+.ep.marked .ep-del{background:rgba(248,113,113,.65);color:#fff}
+/* Add photo button in edit */
+.ep-add{width:88px;height:88px;border-radius:7px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.7rem;gap:4px;transition:all .2s;flex-shrink:0;position:relative}
+.ep-add:hover{border-color:var(--accent);color:var(--accent)}
+.ep-add input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ep-add-ico{font-size:1.5rem}
+.eprev-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:.8rem}
+.eprev{position:relative;width:76px;height:76px;border-radius:6px;overflow:hidden;border:2px solid var(--accent)}
+.eprev img{width:100%;height:100%;object-fit:cover}
+.eprev-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.75);color:var(--red);border:none;border-radius:3px;width:17px;height:17px;font-size:.65rem;line-height:17px;text-align:center;cursor:pointer}
+.efoot{display:flex;gap:9px;margin-top:1.4rem;flex-wrap:wrap}
+.esave{background:var(--accent);color:#000;border:none;padding:9px 20px;border-radius:7px;font-family:var(--disp);font-weight:700;font-size:.83rem;cursor:pointer;transition:opacity .2s}
+.esave:hover{opacity:.85}
+.ecancel{background:var(--s2);border:1px solid var(--border);color:var(--dim);padding:9px 16px;border-radius:7px;font-size:.83rem;cursor:pointer}
 
-  /* ── GPS BUTTON ── */
-  .loc-wrap { position: relative; }
-  .gps-btn {
-    position: absolute;
-    right: 8px; top: 50%; transform: translateY(-50%);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--accent);
-    border-radius: 5px;
-    padding: 3px 8px;
-    font-size: .72rem;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    transition: all .2s;
-    white-space: nowrap;
-  }
-  .gps-btn:hover { border-color: var(--accent); background: rgba(240,192,64,.1); }
-  .gps-btn:disabled { opacity: .5; cursor: not-allowed; }
-  #fLocation { padding-right: 90px; }
+/* CONFIRM DIALOG */
+#cfmOv{z-index:9000;background:rgba(0,0,0,.82)}
+#cfmOv .obox{max-width:340px;text-align:center;padding:2rem}
+.cfm-ico{font-size:2.4rem;margin-bottom:.6rem}
+.cfm-ttl{font-family:var(--disp);font-weight:700;font-size:1.05rem;margin-bottom:.45rem}
+.cfm-msg{font-size:.82rem;color:var(--dim);margin-bottom:1.3rem;line-height:1.55}
+.cfm-btns{display:flex;gap:9px;justify-content:center}
+.cfm-yes{background:var(--red);color:#fff;border:none;padding:9px 22px;border-radius:7px;font-family:var(--disp);font-weight:700;cursor:pointer}
+.cfm-no{background:var(--s2);border:1px solid var(--border);color:var(--dim);padding:9px 16px;border-radius:7px;cursor:pointer}
 
-  /* ── EDIT MODAL ── */
-  .edit-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.92);
-    z-index: 600;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    backdrop-filter: blur(8px);
-  }
-  .edit-overlay.open { display: flex; }
-  .edit-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    max-width: 680px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: modalIn .2s ease;
-  }
-  .edit-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .edit-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: var(--accent);
-  }
-  .edit-body { padding: 1.5rem; }
-  .edit-photos-label {
-    font-family: var(--font-mono);
-    font-size: .7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 1.2rem 0 .6rem;
-  }
-  .edit-photos-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 1rem;
-  }
-  .edit-photo-item {
-    position: relative;
-    width: 90px; height: 90px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 2px solid var(--border);
-    transition: border-color .2s;
-  }
-  .edit-photo-item img { width:100%; height:100%; object-fit:cover; }
-  .edit-photo-item .del-photo-btn {
-    position: absolute;
-    inset: 0;
-    background: rgba(248,113,113,.0);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: background .2s;
-    border: none;
-    color: transparent;
-  }
-  .edit-photo-item:hover .del-photo-btn {
-    background: rgba(248,113,113,.75);
-    color: #fff;
-  }
-  .edit-photo-item.marked-delete {
-    border-color: var(--red);
-    opacity: .5;
-  }
-  .edit-photo-item.marked-delete .del-photo-btn {
-    background: rgba(248,113,113,.6);
-    color: #fff;
-  }
-  .edit-footer {
-    display: flex;
-    gap: 10px;
-    margin-top: 1.5rem;
-    flex-wrap: wrap;
-  }
-  .btn-save-edit {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    padding: 10px 22px;
-    border-radius: 7px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: .85rem;
-    cursor: pointer;
-    transition: opacity .2s;
-  }
-  .btn-save-edit:hover { opacity: .85; }
-  .btn-cancel-edit {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 10px 18px;
-    border-radius: 7px;
-    font-size: .85rem;
-    cursor: pointer;
-  }
+/* skeleton */
+.skel{background:linear-gradient(90deg,var(--surface) 25%,var(--s2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:6px}
+@keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
 
-  /* No config warning */
-  .no-config-warn {
-    background: rgba(248,113,113,.08);
-    border: 1px solid rgba(248,113,113,.3);
-    color: var(--red);
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: .85rem;
-    margin-bottom: 1.5rem;
-    display: none;
-    align-items: center;
-    gap: 8px;
-  }
-  .no-config-warn.visible { display: flex; }
-
-  /* Loading skeleton */
-  .skeleton {
-    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 6px;
-  }
-  @keyframes shimmer {
-    from { background-position: 200% 0; }
-    to   { background-position: -200% 0; }
-  }
-
-  /* Sync status banner */
-  .sync-banner {
-    background: rgba(96,165,250,.08);
-    border: 1px solid rgba(96,165,250,.2);
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: .8rem;
-    color: var(--blue);
-    margin-bottom: 1.5rem;
-    display: none;
-    align-items: center;
-    gap: 8px;
-  }
-  .sync-banner.visible { display: flex; }
-
-  /* Confirm dialog */
-  .confirm-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.8);
-    z-index: 9000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(6px);
-  }
-  .confirm-overlay.open { display: flex; }
-  .confirm-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 2rem;
-    max-width: 360px;
-    width: 90%;
-    text-align: center;
-    animation: modalIn .15s ease;
-  }
-  .confirm-icon { font-size: 2.5rem; margin-bottom: .75rem; }
-  .confirm-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: .5rem;
-  }
-  .confirm-msg {
-    font-size: .85rem;
-    color: var(--text-dim);
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
-  }
-  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
-  .confirm-yes {
-    background: var(--red);
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 7px;
-    font-family: var(--font-display);
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity .2s;
-  }
-  .confirm-yes:hover { opacity: .85; }
-  .confirm-no {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 10px 18px;
-    border-radius: 7px;
-    cursor: pointer;
-  }
+@media(max-width:480px){
+  .hbtn{padding:5px 9px;font-size:.68rem}
+  .wrap{padding:1rem}
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
-  <div class="logo">
-    <div class="logo-dot"></div>
-    Print<span>Archive</span>
-  </div>
-  <div class="header-right">
-    <button class="sync-btn" id="syncBtn" onclick="syncNow()" title="Sinkronisasi data dari Telegram">
-      <div class="sync-dot"></div> Sinkron
-    </button>
-    <button class="config-btn" onclick="toggleConfig()">⚙ Konfigurasi</button>
+  <div class="logo"><div class="ldot"></div>Print<span>Archive</span></div>
+  <div class="hbtns">
+    <button class="hbtn blue" id="syncBtn" onclick="syncNow()">🔄 Sinkron</button>
+    <button class="hbtn" onclick="toggleCfg()">⚙ Konfigurasi</button>
   </div>
 </header>
 
-<!-- MAIN -->
-<div class="container">
+<div class="wrap">
 
-  <!-- CONFIG PANEL -->
-  <div class="config-panel" id="configPanel">
-    <div class="config-title">⚙ Pengaturan Telegram Bot</div>
-    <div class="config-grid">
-      <div>
-        <label class="field-label">Bot Token</label>
-        <input class="field-input" id="cfgToken" type="password"
-          placeholder="1234567890:ABCdefGHIjklMNO..." />
-      </div>
-      <div>
-        <label class="field-label">Chat ID (Channel/Group)</label>
-        <input class="field-input" id="cfgChatId" type="text"
-          placeholder="-1001234567890" />
-      </div>
+  <!-- CONFIG -->
+  <div class="cfg-panel" id="cfgPanel">
+    <div class="cfg-title">⚙ Konfigurasi Telegram Bot</div>
+    <div class="cfg-grid">
+      <div><label class="flabel">Bot Token</label><input class="finput" id="cfgTok" type="password" placeholder="123456:ABCdef..."/></div>
+      <div><label class="flabel">Chat ID</label><input class="finput" id="cfgCid" type="text" placeholder="-1001234567890"/></div>
     </div>
-    <button class="save-config-btn" onclick="saveConfig()">Simpan Konfigurasi</button>
-    <div class="config-note">
-      <strong>🔄 Sinkronisasi Multi-Device:</strong> Arsip disimpan sebagai pesan pinned di Telegram, sehingga bisa diakses dari device manapun secara real-time. Tekan tombol <strong>Sinkron</strong> di pojok kanan atas untuk memuat data terbaru dari Telegram.<br/>
-      <br/>
-      <strong>ℹ Cara kerja:</strong> Setiap kali upload/edit/hapus, data arsip otomatis disimpan ke Telegram. Buka di device lain lalu tekan Sinkron untuk mendapat data terkini.
+    <button class="savebtn" onclick="saveCfg()">💾 Simpan</button>
+    <div class="cfg-note">
+      <b>🔄 Cara Sync Antar Device:</b><br>
+      Arsip disimpan langsung ke Telegram sebagai file JSON. Saat buka di HP atau komputer lain, tekan tombol <b>🔄 Sinkron</b> — data akan diambil langsung dari Telegram sehingga semua device selalu sama.<br><br>
+      <b>Syarat sync:</b> Bot Token &amp; Chat ID harus sama di semua device. Isi sekali, lalu salin konfigurasi ke device lain.
     </div>
   </div>
 
-  <!-- NO CONFIG WARNING -->
-  <div class="no-config-warn" id="noConfigWarn">
-    ⚠ Silakan isi Konfigurasi Telegram terlebih dahulu agar foto dapat diunggah dan arsip tersimpan.
-  </div>
+  <div class="alert alert-warn" id="warnEl">⚠ Isi Konfigurasi Telegram terlebih dahulu.</div>
+  <div class="alert alert-info" id="syncInfo" style="display:none"><span class="spin" style="border-color:rgba(96,165,250,.3);border-top-color:var(--blue)"></span>&nbsp;<span id="syncTxt">Menyinkronkan...</span></div>
 
-  <!-- SYNC BANNER -->
-  <div class="sync-banner" id="syncBanner">
-    <span class="spinner spinner-blue" style="border-color:rgba(96,165,250,.3);border-top-color:var(--blue);"></span>
-    <span id="syncBannerMsg">Menyinkronkan data dari Telegram...</span>
-  </div>
-
-  <!-- UPLOAD CARD -->
-  <div class="upload-card">
-    <div class="upload-title">📸 Upload Foto Pemasangan</div>
-
-    <div class="form-row">
-      <div>
-        <label class="field-label">Nama Pelanggan</label>
-        <input class="field-input" id="fCustomer" type="text" placeholder="Budi Santoso" />
-      </div>
-      <div>
-        <label class="field-label">Lokasi Pemasangan</label>
-        <div class="loc-wrap">
-          <input class="field-input" id="fLocation" type="text" placeholder="Jl. Malioboro No. 10" />
-          <button class="gps-btn" id="gpsBtn" onclick="getGPS()" title="Ambil lokasi GPS">📍 GPS</button>
-        </div>
-      </div>
-      <div>
-        <label class="field-label">Tanggal Pemasangan</label>
-        <input class="field-input" id="fDate" type="date" />
-      </div>
+  <!-- UPLOAD -->
+  <div class="ucard">
+    <div class="ucard-title">📸 Upload Foto Pemasangan</div>
+    <div class="frow">
+      <div><label class="flabel">Nama Pelanggan</label><input class="finput" id="fCust" placeholder="Budi Santoso"/></div>
+      <div><label class="flabel">Lokasi</label><div class="locwrap"><input class="finput" id="fLoc" placeholder="Jl. Malioboro No.10"/><button class="gpsbtn" id="gpsBtn" onclick="getGPS()">📍 GPS</button></div></div>
+      <div><label class="flabel">Tanggal</label><input class="finput" id="fDate" type="date"/></div>
     </div>
-
-    <div class="form-row" style="grid-template-columns:1fr;">
-      <div>
-        <label class="field-label">Keterangan</label>
-        <input class="field-input" id="fNote" type="text" placeholder="Opsional..." />
-      </div>
-    </div>
-
-    <!-- DROP ZONE -->
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept="image/*" multiple
-        onchange="handleFiles(this.files)" />
+    <div class="frow frow1"><div><label class="flabel">Keterangan</label><input class="finput" id="fNote" placeholder="Opsional..."/></div></div>
+    <div class="dropzone" id="dz">
+      <input type="file" id="fInput" accept="image/*" multiple onchange="handleFiles(this.files)"/>
       <div class="drop-icon">🖼️</div>
-      <div class="drop-text">
-        <strong>Klik atau drag foto</strong> ke sini<br/>
-        <span style="font-size:.75rem;color:var(--text-muted);">Multiple foto didukung · JPG, PNG, WEBP</span>
-      </div>
+      <div class="drop-txt"><b>Klik atau drag foto</b> ke sini<br><span style="font-size:.73rem;color:var(--muted)">Multiple · JPG PNG WEBP</span></div>
     </div>
-
-    <!-- PREVIEW THUMBNAILS -->
-    <div class="preview-row" id="previewRow"></div>
-
-    <!-- PROGRESS -->
-    <div class="progress-bar-wrap" id="progressWrap">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-    <div id="progressLabel" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem;"></div>
-
-    <button class="upload-btn" id="uploadBtn" onclick="startUpload()">
-      📤 Upload ke Telegram
-    </button>
+    <div class="prev-row" id="prevRow"></div>
+    <div class="prog-wrap" id="progWrap"><div class="prog-bar" id="progBar"></div></div>
+    <div class="prog-lbl" id="progLbl"></div>
+    <button class="ubtn" id="upBtn" onclick="startUpload()">📤 Upload ke Telegram</button>
   </div>
 
   <!-- FILTERS -->
-  <div class="filters-bar">
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchInput" type="text"
-        placeholder="Cari pelanggan, lokasi, keterangan..."
-        oninput="renderGrid()" />
-    </div>
-    <button class="sort-btn" id="sortBtn" onclick="toggleSort()">↓ Terbaru</button>
-    <button class="dl-all-btn" id="dlAllBtn" onclick="downloadAllZip()" title="Download semua arsip sebagai ZIP">
-      📦 Download Semua ZIP
-    </button>
+  <div class="filters">
+    <div class="srchwrap"><span class="srch-ico">🔍</span><input class="srch" id="srch" placeholder="Cari nama, lokasi, keterangan..." oninput="renderGrid()"/></div>
+    <button class="fbtn" id="sortBtn" onclick="toggleSort()">↓ Terbaru</button>
+    <button class="fbtn blue-b" id="dlAllBtn" onclick="dlAllZip()">📦 Download Semua ZIP</button>
   </div>
 
-  <!-- STATS -->
-  <div class="stats-bar" id="statsBar"></div>
-
-  <!-- GRID HEADER -->
-  <div class="grid-header">Arsip Foto</div>
-
-  <!-- ARCHIVE GRID -->
-  <div class="archive-grid" id="archiveGrid"></div>
-  <div class="empty-state" id="emptyState">
-    <div class="empty-icon">📂</div>
-    <div class="empty-title">Arsip masih kosong</div>
-    <p>Upload foto pemasangan pertama Anda di atas.<br/>Atau tekan <strong>Sinkron</strong> jika sudah ada data di Telegram.</p>
+  <div class="stats" id="statsEl"></div>
+  <div class="gh">Arsip Foto</div>
+  <div class="grid" id="gridEl"></div>
+  <div class="empty" id="emptyEl">
+    <div class="empty-ico">📂</div>
+    <div class="empty-ttl">Arsip kosong</div>
+    <p style="font-size:.83rem">Upload foto di atas, atau tekan <b>🔄 Sinkron</b> jika data sudah ada di Telegram.</p>
   </div>
+</div>
 
-</div><!-- /container -->
-
-<!-- LIGHTBOX MODAL -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal-box" id="modalBox">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Detail Pemasangan</div>
-      <button class="modal-close" onclick="closeModalDirect()">✕</button>
-    </div>
-    <div class="modal-body">
-      <img class="modal-main-img" id="modalMainImg" src="" alt=""
-        onclick="openFullImg(this.src)" />
-      <div class="modal-thumbnails" id="modalThumbs"></div>
-      <div class="modal-meta-grid" id="modalMeta"></div>
-      <div class="modal-action-row">
-        <button class="modal-edit-btn" onclick="openEditFromModal()">✏️ Edit</button>
-        <button class="modal-dl-btn" id="modalDlBtn" onclick="downloadEntryZip()">📦 Download ZIP</button>
-        <button class="modal-del-btn" id="modalDelBtn" onclick="deleteEntryFromModal()">🗑 Hapus Arsip</button>
+<!-- MODAL LIGHTBOX -->
+<div class="ov" id="modalOv" onclick="if(event.target===this)closeMod()">
+  <div class="obox">
+    <div class="ohdr"><div class="ottl" id="modTtl"></div><button class="ocls" onclick="closeMod()">✕</button></div>
+    <div class="obdy">
+      <img class="modal-img" id="modImg" src="" onclick="if(this.src)window.open(this.src,'_blank')"/>
+      <div class="thumbs" id="modThumbs"></div>
+      <div class="meta-grid" id="modMeta"></div>
+      <div class="mact-row">
+        <button class="mbtn gold" onclick="editFromMod()">✏️ Edit</button>
+        <button class="mbtn blu" onclick="dlModZip()">📦 Download ZIP</button>
+        <button class="mbtn red" onclick="delFromMod()">🗑 Hapus</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- EDIT MODAL -->
-<div class="edit-overlay" id="editOverlay" onclick="closeEditOutside(event)">
-  <div class="edit-box" id="editBox">
-    <div class="edit-header">
-      <div class="edit-title">✏️ Edit Arsip</div>
-      <button class="modal-close" onclick="closeEdit()">✕</button>
-    </div>
-    <div class="edit-body">
-      <div class="config-grid">
-        <div>
-          <label class="field-label">Nama Pelanggan</label>
-          <input class="field-input" id="editCustomer" type="text" />
-        </div>
-        <div>
-          <label class="field-label">Lokasi Pemasangan</label>
-          <div class="loc-wrap">
-            <input class="field-input" id="editLocation" type="text" />
-            <button class="gps-btn" onclick="getGPSEdit()" title="Ambil GPS">📍 GPS</button>
-          </div>
-        </div>
-        <div>
-          <label class="field-label">Tanggal</label>
-          <input class="field-input" id="editDate" type="date" />
-        </div>
-        <div>
-          <label class="field-label">Keterangan</label>
-          <input class="field-input" id="editNote" type="text" />
-        </div>
+<div class="ov" id="editOv" onclick="if(event.target===this)closeEdit()">
+  <div class="obox">
+    <div class="ohdr"><div class="ottl" style="color:var(--accent)">✏️ Edit Arsip</div><button class="ocls" onclick="closeEdit()">✕</button></div>
+    <div class="obdy">
+      <div class="cfg-grid">
+        <div><label class="flabel">Nama Pelanggan</label><input class="finput" id="eCust"/></div>
+        <div><label class="flabel">Lokasi</label><div class="locwrap"><input class="finput" id="eLoc"/><button class="gpsbtn" onclick="getGPSEdit()">📍 GPS</button></div></div>
+        <div><label class="flabel">Tanggal</label><input class="finput" id="eDate" type="date"/></div>
+        <div><label class="flabel">Keterangan</label><input class="finput" id="eNote"/></div>
       </div>
-      <div class="edit-photos-label">📷 Foto — klik foto untuk tandai hapus</div>
-      <div class="edit-photos-grid" id="editPhotosGrid"></div>
-      <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem;">
-        Foto yang ditandai merah akan dihapus dari arsip (tidak terhapus di Telegram).
-      </p>
-      <div class="edit-footer">
-        <button class="btn-save-edit" onclick="saveEdit()">💾 Simpan Perubahan</button>
-        <button class="btn-cancel-edit" onclick="closeEdit()">Batal</button>
+
+      <!-- EXISTING PHOTOS -->
+      <div class="epl">📷 Foto Tersimpan — klik untuk hapus</div>
+      <div class="epg" id="epg"></div>
+      <p style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem">Foto merah = akan dihapus saat simpan. Klik lagi untuk batalkan.</p>
+
+      <!-- ADD NEW PHOTOS -->
+      <div class="epl">➕ Tambah Foto Baru</div>
+      <div class="eprev-row" id="eprevRow"></div>
+      <label class="ep-add" style="width:auto;height:auto;padding:9px 18px;flex-direction:row;gap:8px;border-radius:7px;margin-bottom:.5rem">
+        <span style="font-size:1.2rem">📎</span>
+        <span style="font-size:.8rem">Pilih foto baru...</span>
+        <input type="file" accept="image/*" multiple onchange="handleEditFiles(this.files)"/>
+      </label>
+      <p style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem">Foto baru akan diupload ke Telegram saat simpan.</p>
+
+      <div class="efoot">
+        <button class="esave" id="eSaveBtn" onclick="saveEdit()">💾 Simpan Perubahan</button>
+        <button class="ecancel" onclick="closeEdit()">Batal</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- CUSTOM CONFIRM DIALOG -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-icon" id="confirmIcon">⚠️</div>
-    <div class="confirm-title" id="confirmTitle">Yakin?</div>
-    <div class="confirm-msg" id="confirmMsg"></div>
-    <div class="confirm-btns">
-      <button class="confirm-no" onclick="confirmResolve(false)">Batal</button>
-      <button class="confirm-yes" id="confirmYes" onclick="confirmResolve(true)">Hapus</button>
+<!-- CONFIRM -->
+<div class="ov" id="cfmOv">
+  <div class="obox">
+    <div class="cfm-ico" id="cfmIco">⚠️</div>
+    <div class="cfm-ttl" id="cfmTtl"></div>
+    <div class="cfm-msg" id="cfmMsg"></div>
+    <div class="cfm-btns">
+      <button class="cfm-no" onclick="cfmResolve(false)">Batal</button>
+      <button class="cfm-yes" id="cfmYes" onclick="cfmResolve(true)">Hapus</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toastEl"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════
-let selectedFiles = [];
-let archive = [];
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let archive  = [];
 let sortDesc = true;
+let selFiles = []; // upload baru
+let modEntry = null, modIdx = 0;
+let editId   = null, editDel = new Set(), editNewFiles = [];
 
-// ═══════════════════════════════════════════════════════════
-//  CONFIG
-// ═══════════════════════════════════════════════════════════
-const DEFAULT_TOKEN  = '8026645542:AAFkm_OsFO2cI8x3T1KPH6Afydr4hGYlROQ';
-const DEFAULT_CHATID = '-1004299885530';
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const DEF_TOK = '8026645542:AAFkm_OsFO2cI8x3T1KPH6Afydr4hGYlROQ';
+const DEF_CID = '-1004299885530';
+const DB_FILE = 'printarchive_db.json';
+const LS_FID  = 'pa_fid';   // Telegram file_id dari file JSON arsip
+const LS_MID  = 'pa_mid';   // message_id pesan yang menyimpan file JSON
 
-// Nama file data arsip yang dikirim ke Telegram sebagai dokumen
-const ARCHIVE_FILENAME = 'printarchive_data.json';
-
-function getConfig() {
-  return {
-    token:  localStorage.getItem('tg_token')  || DEFAULT_TOKEN,
-    chatId: localStorage.getItem('tg_chatid') || DEFAULT_CHATID
-  };
+function cfg(){
+  return{tok:localStorage.getItem('pa_tok')||DEF_TOK,cid:localStorage.getItem('pa_cid')||DEF_CID};
 }
-
-function saveConfig() {
-  const token  = document.getElementById('cfgToken').value.trim();
-  const chatId = document.getElementById('cfgChatId').value.trim();
-  if (!token || !chatId) { toast('Isi Token dan Chat ID terlebih dahulu.', 'error'); return; }
-  localStorage.setItem('tg_token',  token);
-  localStorage.setItem('tg_chatid', chatId);
-  toast('Konfigurasi tersimpan!', 'success');
-  toggleConfig();
-  checkConfig();
-}
-
-function toggleConfig() {
-  const panel = document.getElementById('configPanel');
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) {
-    const cfg = getConfig();
-    document.getElementById('cfgToken').value  = cfg.token;
-    document.getElementById('cfgChatId').value = cfg.chatId;
+function toggleCfg(){
+  const p=document.getElementById('cfgPanel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')){
+    const c=cfg();
+    document.getElementById('cfgTok').value=c.tok;
+    document.getElementById('cfgCid').value=c.cid;
   }
 }
-
-function checkConfig() {
-  const cfg  = getConfig();
-  const warn = document.getElementById('noConfigWarn');
-  if (!cfg.token || !cfg.chatId) warn.classList.add('visible');
-  else warn.classList.remove('visible');
+function saveCfg(){
+  const t=document.getElementById('cfgTok').value.trim();
+  const c=document.getElementById('cfgCid').value.trim();
+  if(!t||!c){toast('Isi Token dan Chat ID!','err');return;}
+  localStorage.setItem('pa_tok',t);
+  localStorage.setItem('pa_cid',c);
+  // Reset sync refs supaya sync ulang dari awal
+  localStorage.removeItem(LS_FID);
+  localStorage.removeItem(LS_MID);
+  toast('Konfigurasi tersimpan! Tekan Sinkron.','ok');
+  toggleCfg();
+  checkCfg();
+}
+function checkCfg(){
+  const c=cfg();
+  const ok=c.tok&&c.cid;
+  const el=document.getElementById('warnEl');
+  if(ok)el.classList.remove('show'); else el.classList.add('show');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  TELEGRAM SYNC — Simpan & Baca arsip dari Telegram
-//  Strategi: simpan JSON arsip sebagai dokumen ke channel,
-//  lalu catat message_id di localStorage agar bisa di-update.
-// ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════
+   TELEGRAM API HELPERS
+═══════════════════════════════════════════ */
+async function tgPost(method,params){
+  const c=cfg();
+  const r=await fetch(`https://api.telegram.org/bot${c.tok}/${method}`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:c.cid,...params})
+  });
+  return r.json();
+}
+async function tgForm(method,fd){
+  const c=cfg();
+  const r=await fetch(`https://api.telegram.org/bot${c.tok}/${method}`,{method:'POST',body:fd});
+  return r.json();
+}
 
-const SYNC_KEY = 'printarchive_sync_msgid';
+/* ═══════════════════════════════════════════
+   SYNC — SIMPAN & BACA ARSIP DARI TELEGRAM
+   Strategi:
+   1. Arsip disimpan sebagai file JSON ke Telegram
+   2. file_id & message_id disimpan di localStorage
+   3. Device lain tinggal tanya getFile dengan file_id
+      -> tidak butuh getUpdates / scan history
+   4. Saat ada perubahan: hapus pesan lama, kirim file baru,
+      simpan file_id & message_id baru ke localStorage
+═══════════════════════════════════════════ */
 
-async function tgSend(method, params, body) {
-  const cfg = getConfig();
-  let url = `https://api.telegram.org/bot${cfg.token}/${method}`;
-  const opts = { method: 'POST' };
-  if (body instanceof FormData) {
-    opts.body = body;
-  } else {
-    opts.headers = { 'Content-Type': 'application/json' };
-    opts.body = JSON.stringify({ chat_id: cfg.chatId, ...params });
+// Simpan arsip -> Telegram (hapus lama, kirim baru)
+async function pushArchive(){
+  const c=cfg();
+  if(!c.tok||!c.cid)return;
+
+  // Hapus file lama agar tidak menumpuk
+  const oldMid=localStorage.getItem(LS_MID);
+  if(oldMid){
+    try{await tgPost('deleteMessage',{message_id:parseInt(oldMid)});}catch(_){}
+    localStorage.removeItem(LS_MID);
+    localStorage.removeItem(LS_FID);
   }
-  const resp = await fetch(url, opts);
-  return resp.json();
-}
 
-// Simpan arsip ke Telegram sebagai dokumen (JSON)
-async function saveArchiveToTelegram() {
-  const cfg = getConfig();
-  if (!cfg.token || !cfg.chatId) return;
+  // Kirim file JSON baru
+  const blob=new Blob([JSON.stringify(archive)],{type:'application/json'});
+  const fd=new FormData();
+  fd.append('chat_id',c.cid);
+  fd.append('document',blob,DB_FILE);
+  fd.append('caption','[PA-DB] '+new Date().toISOString()); // penanda unik
 
-  const json = JSON.stringify(archive, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const fd = new FormData();
-  fd.append('chat_id', cfg.chatId);
-  fd.append('document', blob, ARCHIVE_FILENAME);
-  fd.append('caption', `📦 PrintArchive Data — ${new Date().toLocaleString('id-ID')} — JANGAN HAPUS PESAN INI`);
-
-  try {
-    // Hapus pesan lama jika ada
-    const oldMsgId = localStorage.getItem(SYNC_KEY);
-    if (oldMsgId) {
-      await tgSend('deleteMessage', { message_id: parseInt(oldMsgId) });
-      localStorage.removeItem(SYNC_KEY);
+  try{
+    const res=await tgForm('sendDocument',fd);
+    if(res.ok){
+      localStorage.setItem(LS_MID,String(res.result.message_id));
+      localStorage.setItem(LS_FID,res.result.document.file_id);
     }
-
-    const result = await tgSend('sendDocument', {}, fd);
-    if (result.ok) {
-      localStorage.setItem(SYNC_KEY, result.result.message_id.toString());
-    }
-  } catch(e) {
-    console.warn('saveArchiveToTelegram failed:', e);
-  }
+  }catch(e){console.warn('pushArchive err',e);}
 }
 
-// Cari dan baca file arsip dari Telegram (cari dokumen terbaru bernama ARCHIVE_FILENAME)
-async function loadArchiveFromTelegram() {
-  const cfg = getConfig();
-  if (!cfg.token || !cfg.chatId) return null;
+// Ambil arsip dari Telegram pakai file_id yang tersimpan
+async function pullArchive(){
+  const c=cfg();
+  if(!c.tok||!c.cid)return null;
 
-  // Cari pesan dokumen dengan caption berisi "PrintArchive Data"
-  // Gunakan getUpdates atau cari via message_id yang tersimpan
-  const msgId = localStorage.getItem(SYNC_KEY);
-  if (msgId) {
-    try {
-      // Coba download file dari message_id yang dikenal
-      const info = await fetch(
-        `https://api.telegram.org/bot${cfg.token}/getFile?file_id=` +
-        await getMsgFileId(cfg.token, cfg.chatId, parseInt(msgId))
-      ).then(r => r.json());
-
-      if (info.ok) {
-        const fileUrl = `https://api.telegram.org/file/bot${cfg.token}/${info.result.file_path}`;
-        const text = await fetch(fileUrl).then(r => r.text());
-        return JSON.parse(text);
+  const fid=localStorage.getItem(LS_FID);
+  if(fid){
+    try{
+      const fi=await(await fetch(`https://api.telegram.org/bot${c.tok}/getFile?file_id=${fid}`)).json();
+      if(fi.ok){
+        const txt=await(await fetch(`https://api.telegram.org/file/bot${c.tok}/${fi.result.file_path}`)).text();
+        return JSON.parse(txt);
       }
-    } catch(e) {
-      console.warn('loadArchiveFromTelegram (cached msgId) failed:', e);
-    }
+    }catch(_){}
   }
 
-  // Fallback: cari via getMessages dengan offset (scan 100 pesan terakhir)
-  return await searchArchiveInHistory(cfg.token, cfg.chatId);
+  // Fallback: scan 100 update terakhir bot (pertama kali / file_id hilang)
+  return await scanUpdates(c.tok,c.cid);
 }
 
-async function getMsgFileId(token, chatId, messageId) {
-  // Gunakan forwardMessage trick: kita getFile dari file_id yang ada di pesan
-  // Cara lebih sederhana: pakai copyMessage untuk dapat file_id
-  // Namun cara paling reliable: kita simpan file_id langsung saat upload
-  const fid = localStorage.getItem(SYNC_KEY + '_fid');
-  if (fid) return fid;
-  return null;
-}
-
-async function searchArchiveInHistory(token, chatId) {
-  // Cari di 200 update terakhir bot
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100&offset=-100`).then(r => r.json());
-    if (!r.ok) return null;
-    // Cari dokumen dengan nama file arsip
-    const updates = r.result || [];
-    for (let i = updates.length - 1; i >= 0; i--) {
-      const msg = updates[i].message || updates[i].channel_post;
-      if (!msg) continue;
-      if (msg.chat && String(msg.chat.id) !== String(chatId)) continue;
-      if (msg.document && msg.document.file_name === ARCHIVE_FILENAME) {
-        // Simpan message_id untuk lain kali
-        localStorage.setItem(SYNC_KEY, msg.message_id.toString());
-        localStorage.setItem(SYNC_KEY + '_fid', msg.document.file_id);
-        // Download file
-        const fi = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${msg.document.file_id}`).then(r => r.json());
-        if (fi.ok) {
-          const url = `https://api.telegram.org/file/bot${token}/${fi.result.file_path}`;
-          const text = await fetch(url).then(r => r.text());
-          return JSON.parse(text);
+async function scanUpdates(tok,cid){
+  try{
+    const r=await(await fetch(`https://api.telegram.org/bot${tok}/getUpdates?limit=100&offset=-100`)).json();
+    if(!r.ok)return null;
+    const all=(r.result||[]).reverse(); // terbaru dulu
+    for(const u of all){
+      const msg=u.message||u.channel_post||u.edited_message||u.edited_channel_post;
+      if(!msg)continue;
+      if(String(msg.chat?.id)!==String(cid))continue;
+      const doc=msg.document;
+      if(!doc)continue;
+      if(doc.file_name===DB_FILE||(msg.caption&&msg.caption.includes('[PA-DB]'))){
+        // Simpan referensi
+        localStorage.setItem(LS_MID,String(msg.message_id));
+        localStorage.setItem(LS_FID,doc.file_id);
+        // Download
+        const fi=await(await fetch(`https://api.telegram.org/bot${tok}/getFile?file_id=${doc.file_id}`)).json();
+        if(fi.ok){
+          const txt=await(await fetch(`https://api.telegram.org/file/bot${tok}/${fi.result.file_path}`)).text();
+          return JSON.parse(txt);
         }
       }
     }
-  } catch(e) {
-    console.warn('searchArchiveInHistory failed:', e);
-  }
+  }catch(e){console.warn('scanUpdates',e);}
   return null;
 }
 
-// Versi baru: simpan file_id saat upload
-async function saveArchiveToTelegramV2() {
-  const cfg = getConfig();
-  if (!cfg.token || !cfg.chatId) return;
-
-  const json = JSON.stringify(archive, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const fd = new FormData();
-  fd.append('chat_id', cfg.chatId);
-  fd.append('document', blob, ARCHIVE_FILENAME);
-  fd.append('caption', `[PrintArchive-DB] ${new Date().toISOString()}`);
-
-  try {
-    // Hapus pesan lama
-    const oldMsgId = localStorage.getItem(SYNC_KEY);
-    if (oldMsgId) {
-      try {
-        await tgSend('deleteMessage', { message_id: parseInt(oldMsgId) });
-      } catch(e) {}
-      localStorage.removeItem(SYNC_KEY);
-      localStorage.removeItem(SYNC_KEY + '_fid');
-    }
-
-    const result = await tgSend('sendDocument', {}, fd);
-    if (result.ok) {
-      const msgId = result.result.message_id;
-      const fileId = result.result.document.file_id;
-      localStorage.setItem(SYNC_KEY, msgId.toString());
-      localStorage.setItem(SYNC_KEY + '_fid', fileId);
-    }
-  } catch(e) {
-    console.warn('saveArchiveToTelegramV2 failed:', e);
-  }
-}
-
-// Main save: simpan ke localStorage DAN Telegram
-function saveArchive(syncToTelegram = true) {
-  // Simpan lokal sebagai cache
-  localStorage.setItem('printarchive_data', JSON.stringify(archive));
-  if (syncToTelegram) {
-    saveArchiveToTelegramV2(); // non-blocking
-  }
-}
-
-// Tombol Sinkron manual
-async function syncNow() {
-  const cfg = getConfig();
-  if (!cfg.token || !cfg.chatId) {
-    toast('Isi konfigurasi Telegram dulu!', 'error');
-    document.getElementById('configPanel').classList.add('open');
+// Tombol Sinkron
+async function syncNow(){
+  const c=cfg();
+  if(!c.tok||!c.cid){
+    toast('Isi konfigurasi dulu!','err');
+    document.getElementById('cfgPanel').classList.add('open');
     return;
   }
-
-  const btn = document.getElementById('syncBtn');
-  btn.disabled = true;
-
-  const banner = document.getElementById('syncBanner');
-  document.getElementById('syncBannerMsg').textContent = 'Menyinkronkan data dari Telegram...';
-  banner.classList.add('visible');
-
-  try {
-    const remote = await loadArchiveFromTelegramV2(cfg.token, cfg.chatId);
-    if (remote && Array.isArray(remote)) {
-      archive = remote;
-      localStorage.setItem('printarchive_data', JSON.stringify(archive));
+  const btn=document.getElementById('syncBtn');
+  btn.disabled=true;
+  showSyncInfo('Mengambil data dari Telegram...');
+  try{
+    const remote=await pullArchive();
+    if(remote&&Array.isArray(remote)){
+      archive=remote.map(e=>({...e,tok:c.tok}));
+      saveLoc();
       renderGrid();
-      toast(`✅ Sinkron berhasil! ${archive.length} arsip dimuat.`, 'success');
-    } else {
-      // Tidak ada data di Telegram, gunakan lokal
-      toast('ℹ Tidak ada data di Telegram. Menggunakan data lokal.', 'info');
+      toast(`✅ Sinkron OK — ${archive.length} arsip dimuat.`,'ok');
+    }else{
+      toast('Tidak ada data di Telegram. Data lokal dipertahankan.','inf');
     }
-  } catch(e) {
-    toast('❌ Gagal sinkron: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    banner.classList.remove('visible');
-  }
+  }catch(e){toast('❌ Gagal sinkron: '+e.message,'err');}
+  finally{btn.disabled=false;hideSyncInfo();}
 }
 
-// Load arsip dari Telegram (V2 — pakai file_id tersimpan)
-async function loadArchiveFromTelegramV2(token, chatId) {
-  const fid = localStorage.getItem(SYNC_KEY + '_fid');
-  if (fid) {
-    try {
-      const fi = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fid}`).then(r => r.json());
-      if (fi.ok) {
-        const url = `https://api.telegram.org/file/bot${token}/${fi.result.file_path}`;
-        const text = await fetch(url).then(r => r.text());
-        return JSON.parse(text);
-      }
-    } catch(e) {}
-  }
-  // Fallback: scan updates
-  return await searchArchiveInHistoryV2(token, chatId);
+function showSyncInfo(msg){
+  document.getElementById('syncTxt').textContent=msg;
+  document.getElementById('syncInfo').style.display='flex';
+}
+function hideSyncInfo(){document.getElementById('syncInfo').style.display='none';}
+
+/* ═══════════════════════════════════════════
+   LOCAL STORAGE
+═══════════════════════════════════════════ */
+function saveLoc(){localStorage.setItem('pa_data',JSON.stringify(archive));}
+function loadLoc(){
+  try{const d=localStorage.getItem('pa_data');return d?JSON.parse(d):[];}catch{return[];}
 }
 
-async function searchArchiveInHistoryV2(token, chatId) {
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100&offset=-100`).then(r => r.json());
-    if (!r.ok) return null;
-
-    const updates = r.result || [];
-    for (let i = updates.length - 1; i >= 0; i--) {
-      const msg = updates[i].message || updates[i].channel_post;
-      if (!msg) continue;
-      const cid = String(msg.chat && msg.chat.id);
-      if (cid !== String(chatId)) continue;
-      const doc = msg.document;
-      if (!doc) continue;
-      if (doc.file_name === ARCHIVE_FILENAME || (msg.caption && msg.caption.includes('[PrintArchive-DB]'))) {
-        localStorage.setItem(SYNC_KEY, msg.message_id.toString());
-        localStorage.setItem(SYNC_KEY + '_fid', doc.file_id);
-        const fi = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${doc.file_id}`).then(r => r.json());
-        if (fi.ok) {
-          const url = `https://api.telegram.org/file/bot${token}/${fi.result.file_path}`;
-          const text = await fetch(url).then(r => r.text());
-          return JSON.parse(text);
-        }
-      }
-    }
-  } catch(e) {
-    console.warn('searchArchiveInHistoryV2:', e);
-  }
-  return null;
+// Simpan lokal + push ke Telegram (non-blocking)
+function saveAll(){
+  saveLoc();
+  pushArchive(); // async, tidak di-await agar UI cepat
 }
 
-// ═══════════════════════════════════════════════════════════
-//  FILE HANDLING
-// ═══════════════════════════════════════════════════════════
-function handleFiles(files) {
-  for (const f of files) {
-    if (!f.type.startsWith('image/')) continue;
-    selectedFiles.push(f);
-  }
-  renderPreviews();
+/* ═══════════════════════════════════════════
+   FILE HANDLING (upload baru)
+═══════════════════════════════════════════ */
+function handleFiles(files){
+  for(const f of files)if(f.type.startsWith('image/'))selFiles.push(f);
+  renderPrev();
 }
-
-function renderPreviews() {
-  const row = document.getElementById('previewRow');
-  row.innerHTML = '';
-  selectedFiles.forEach((f, i) => {
-    const url = URL.createObjectURL(f);
-    const div = document.createElement('div');
-    div.className = 'preview-thumb';
-    div.innerHTML = `<img src="${url}"/><button class="remove-thumb" onclick="removeFile(${i})">✕</button>`;
-    row.appendChild(div);
+function renderPrev(){
+  const row=document.getElementById('prevRow');
+  row.innerHTML='';
+  selFiles.forEach((f,i)=>{
+    const u=URL.createObjectURL(f);
+    const d=document.createElement('div');
+    d.className='prev-th';
+    d.innerHTML=`<img src="${u}"/><button onclick="rmFile(${i})">✕</button>`;
+    row.appendChild(d);
   });
 }
+function rmFile(i){selFiles.splice(i,1);renderPrev();}
 
-function removeFile(i) {
-  selectedFiles.splice(i, 1);
-  renderPreviews();
-}
+// Drag & drop
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');handleFiles(e.dataTransfer.files);});
 
-// Drag & Drop
-const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  handleFiles(e.dataTransfer.files);
-});
+/* ═══════════════════════════════════════════
+   UPLOAD
+═══════════════════════════════════════════ */
+async function startUpload(){
+  const c=cfg();
+  if(!c.tok||!c.cid){toast('Isi konfigurasi dulu!','err');document.getElementById('cfgPanel').classList.add('open');return;}
+  const cust=document.getElementById('fCust').value.trim();
+  const loc =document.getElementById('fLoc').value.trim();
+  const date=document.getElementById('fDate').value;
+  const note=document.getElementById('fNote').value.trim();
+  if(!cust){toast('Isi Nama Pelanggan!','err');return;}
+  if(!selFiles.length){toast('Pilih minimal 1 foto!','err');return;}
 
-// ═══════════════════════════════════════════════════════════
-//  UPLOAD
-// ═══════════════════════════════════════════════════════════
-async function startUpload() {
-  const cfg = getConfig();
-  if (!cfg.token || !cfg.chatId) {
-    toast('Isi konfigurasi Telegram dulu!', 'error');
-    document.getElementById('configPanel').classList.add('open');
-    return;
-  }
+  const btn=document.getElementById('upBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Mengupload...';
+  const pw=document.getElementById('progWrap'),pb=document.getElementById('progBar'),pl=document.getElementById('progLbl');
+  pw.classList.add('show');
 
-  const customer = document.getElementById('fCustomer').value.trim();
-  const location = document.getElementById('fLocation').value.trim();
-  const date     = document.getElementById('fDate').value;
-  const note     = document.getElementById('fNote').value.trim();
-
-  if (!customer) { toast('Isi Nama Pelanggan.', 'error'); return; }
-  if (selectedFiles.length === 0) { toast('Pilih minimal 1 foto.', 'error'); return; }
-
-  const btn = document.getElementById('uploadBtn');
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span> Mengupload...`;
-
-  const progressWrap = document.getElementById('progressWrap');
-  const progressBar  = document.getElementById('progressBar');
-  const progressLbl  = document.getElementById('progressLabel');
-  progressWrap.classList.add('visible');
-
-  const fileIds = [];
-
-  try {
-    for (let i = 0; i < selectedFiles.length; i++) {
-      progressLbl.textContent = `Mengunggah foto ${i+1} dari ${selectedFiles.length}...`;
-      progressBar.style.width = ((i / selectedFiles.length) * 80) + '%';
-
-      const fd = new FormData();
-      fd.append('chat_id', cfg.chatId);
-      fd.append('photo', selectedFiles[i]);
-      fd.append('caption',
-        `👤 ${customer}\n📍 ${location || '-'}\n🗓 ${date || '-'}\n📝 ${note || '-'}`
-      );
-
-      const resp = await fetch(`https://api.telegram.org/bot${cfg.token}/sendPhoto`, {
-        method: 'POST', body: fd
-      });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.description || 'Gagal upload ke Telegram');
-
-      const photos = data.result.photo;
-      fileIds.push(photos[photos.length - 1].file_id);
+  const fids=[];
+  try{
+    for(let i=0;i<selFiles.length;i++){
+      pl.textContent=`Mengunggah foto ${i+1}/${selFiles.length}...`;
+      pb.style.width=((i/selFiles.length)*80)+'%';
+      const fd=new FormData();
+      fd.append('chat_id',c.cid);
+      fd.append('photo',selFiles[i]);
+      fd.append('caption',`👤 ${cust}\n📍 ${loc||'-'}\n🗓 ${date||'-'}\n📝 ${note||'-'}`);
+      const res=await tgForm('sendPhoto',fd);
+      if(!res.ok)throw new Error(res.description||'Gagal upload');
+      const ph=res.result.photo;
+      fids.push(ph[ph.length-1].file_id);
     }
+    pb.style.width='90%';pl.textContent='Menyimpan arsip...';
 
-    progressBar.style.width = '90%';
-    progressLbl.textContent = 'Menyimpan arsip...';
-
-    const entry = {
-      id: Date.now(),
-      customer, location, date, note,
-      fileIds,
-      token: cfg.token,
-      uploadedAt: new Date().toISOString()
-    };
+    const entry={id:Date.now(),customer:cust,location:loc,date,note,fids,tok:c.tok,at:new Date().toISOString()};
     archive.unshift(entry);
-    saveArchive(true); // simpan + sync ke Telegram
+    saveAll();
     renderGrid();
-
-    progressBar.style.width = '100%';
-    progressLbl.textContent = 'Semua foto berhasil diunggah & diarsipkan!';
-    toast(`✅ ${selectedFiles.length} foto berhasil diarsipkan!`, 'success');
+    pb.style.width='100%';pl.textContent='Selesai!';
+    toast(`✅ ${selFiles.length} foto berhasil diarsipkan!`,'ok');
     resetForm();
-  } catch(err) {
-    toast('❌ ' + err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '📤 Upload ke Telegram';
-    setTimeout(() => {
-      progressWrap.classList.remove('visible');
-      progressBar.style.width = '0%';
-      progressLbl.textContent = '';
-    }, 2500);
+  }catch(e){toast('❌ '+e.message,'err');}
+  finally{
+    btn.disabled=false;btn.innerHTML='📤 Upload ke Telegram';
+    setTimeout(()=>{pw.classList.remove('show');pb.style.width='0';pl.textContent='';},2500);
   }
 }
-
-function resetForm() {
-  ['fCustomer','fLocation','fDate','fNote'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = id === 'fDate' ? new Date().toISOString().slice(0,10) : '';
-  });
-  selectedFiles = [];
-  renderPreviews();
+function resetForm(){
+  ['fCust','fLoc','fNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
+  selFiles=[];renderPrev();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  FILE URL RESOLVER (Telegram)
-// ═══════════════════════════════════════════════════════════
-const pathCache = {};
-
-async function resolveFileUrl(token, fileId) {
-  if (pathCache[fileId]) return pathCache[fileId];
-  try {
-    const resp = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
-    const data = await resp.json();
-    if (!data.ok) return null;
-    const url = `https://api.telegram.org/file/bot${token}/${data.result.file_path}`;
-    pathCache[fileId] = url;
-    return url;
-  } catch { return null; }
+/* ═══════════════════════════════════════════
+   RESOLVE FILE URL (Telegram)
+═══════════════════════════════════════════ */
+const urlCache={};
+async function fileUrl(tok,fid){
+  if(urlCache[fid])return urlCache[fid];
+  try{
+    const r=await(await fetch(`https://api.telegram.org/bot${tok}/getFile?file_id=${fid}`)).json();
+    if(!r.ok)return null;
+    const u=`https://api.telegram.org/file/bot${tok}/${r.result.file_path}`;
+    urlCache[fid]=u;return u;
+  }catch{return null;}
 }
 
-// ═══════════════════════════════════════════════════════════
-//  RENDER GRID
-// ═══════════════════════════════════════════════════════════
-function getFiltered() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  let list = archive.filter(e => {
-    if (q) {
-      const hay = `${e.customer} ${e.location} ${e.note}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
+/* ═══════════════════════════════════════════
+   RENDER GRID
+═══════════════════════════════════════════ */
+function filtered(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  let list=archive.filter(e=>{
+    if(q){const h=`${e.customer} ${e.location} ${e.note}`.toLowerCase();if(!h.includes(q))return false;}
     return true;
   });
-  if (sortDesc) list = list.slice().sort((a,b) => b.id - a.id);
-  else          list = list.slice().sort((a,b) => a.id - b.id);
-  return list;
+  return sortDesc?list.sort((a,b)=>b.id-a.id):list.sort((a,b)=>a.id-b.id);
 }
-
-function renderGrid() {
-  const list  = getFiltered();
-  const grid  = document.getElementById('archiveGrid');
-  const empty = document.getElementById('emptyState');
-  const stats = document.getElementById('statsBar');
-
-  const totalPhotos = archive.reduce((s,e) => s + e.fileIds.length, 0);
-  stats.innerHTML = `
-    <div class="stat-chip">Total Arsip: <strong>${archive.length}</strong></div>
-    <div class="stat-chip">Total Foto: <strong>${totalPhotos}</strong></div>
-    <div class="stat-chip">Ditampilkan: <strong>${list.length}</strong></div>
-  `;
-
-  if (list.length === 0) {
-    grid.innerHTML = '';
-    empty.classList.add('visible');
-    return;
-  }
-  empty.classList.remove('visible');
-
-  grid.innerHTML = list.map(e => {
-    const dateStr = e.date
-      ? new Date(e.date).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'})
-      : '—';
-    const noteDisplay = e.note ? `<div class="card-note">📝 ${escHtml(e.note)}</div>` : '';
-    return `
-    <div class="archive-card" onclick="openModal(${e.id})">
-      <div class="card-actions">
-        <button class="card-act-btn card-del-btn" onclick="deleteEntry(event,${e.id})">🗑 Hapus</button>
-        <div style="display:flex;gap:4px;">
-          <button class="card-act-btn card-dl-btn" onclick="downloadEntryZipById(event,${e.id})">📦</button>
-          <button class="card-act-btn card-edit-btn" onclick="openEditCard(event,${e.id})">✏️</button>
+function renderGrid(){
+  const list=filtered();
+  const g=document.getElementById('gridEl'),em=document.getElementById('emptyEl'),st=document.getElementById('statsEl');
+  const tot=archive.reduce((s,e)=>s+(e.fids||[]).length,0);
+  st.innerHTML=`<div class="chip">Total Arsip: <b>${archive.length}</b></div><div class="chip">Total Foto: <b>${tot}</b></div><div class="chip">Ditampilkan: <b>${list.length}</b></div>`;
+  if(!list.length){g.innerHTML='';em.classList.add('show');return;}
+  em.classList.remove('show');
+  g.innerHTML=list.map(e=>{
+    const dt=e.date?new Date(e.date).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'—';
+    const cnt=(e.fids||[]).length;
+    return`<div class="card" onclick="openMod(${e.id})">
+      <div class="card-acts">
+        <button class="cact cact-del" onclick="delEntry(event,${e.id})">🗑 Hapus</button>
+        <div class="cact-grp">
+          <button class="cact cact-dl" onclick="dlEntryZip(event,${e.id})" title="Download ZIP">📦</button>
+          <button class="cact cact-edit" onclick="openEditCard(event,${e.id})">✏️ Edit</button>
         </div>
       </div>
-      <div class="card-images" id="cimg_${e.id}">
-        <img src="" alt="" id="cimg_${e.id}_0" class="hidden" />
-        ${e.fileIds.length > 1 ? `
-          <div class="card-img-nav">
-            <button class="img-nav-btn" onclick="navCard(event,'${e.id}',-1)">‹</button>
-            <button class="img-nav-btn" onclick="navCard(event,'${e.id}',1)">›</button>
-          </div>
-          <div class="card-count-badge">1 / ${e.fileIds.length}</div>
-        ` : ''}
+      <div class="card-imgs" id="ci_${e.id}">
+        <img src="" id="ci_${e.id}_0" class="hide"/>
+        ${cnt>1?`<div class="nav-row"><button class="navbtn" onclick="navCard(event,${e.id},-1)">‹</button><button class="navbtn" onclick="navCard(event,${e.id},1)">›</button></div><div class="badge">1 / ${cnt}</div>`:''}
       </div>
       <div class="card-body">
-        <div class="card-customer">${escHtml(e.customer)}</div>
-        <div class="card-desc">📍 ${escHtml(e.location || 'Lokasi tidak diisi')}</div>
-        ${noteDisplay}
-        <div class="card-footer">
-          <span class="card-date">📅 ${dateStr}</span>
-          <span style="font-size:.7rem;color:var(--text-muted);font-family:var(--font-mono);">${e.fileIds.length} foto</span>
-        </div>
+        <div class="card-name">${esc(e.customer)}</div>
+        <div class="card-loc">📍 ${esc(e.location||'Lokasi tidak diisi')}</div>
+        ${e.note?`<div class="card-note">📝 ${esc(e.note)}</div>`:''}
+        <div class="card-foot"><span class="card-date">📅 ${dt}</span><span style="font-size:.68rem;color:var(--muted);font-family:var(--mono)">${cnt} foto</span></div>
       </div>
     </div>`;
   }).join('');
-
-  list.forEach(e => loadCardImage(e, 0));
+  list.forEach(e=>loadCardImg(e,0));
 }
-
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const cImgIdx={};
+async function loadCardImg(entry,idx){
+  const fids=entry.fids||[];
+  if(!fids[idx])return;
+  cImgIdx[entry.id]=idx;
+  const el=document.getElementById(`ci_${entry.id}_0`);
+  if(!el)return;
+  const bdg=document.querySelector(`#ci_${entry.id} .badge`);
+  if(bdg)bdg.textContent=`${idx+1} / ${fids.length}`;
+  try{const u=await fileUrl(entry.tok||cfg().tok,fids[idx]);if(u&&el){el.src=u;el.classList.remove('hide');}}catch(_){}
 }
-
-const cardImgIdx = {};
-
-async function loadCardImage(entry, idx) {
-  if (!entry.fileIds[idx]) return;
-  cardImgIdx[entry.id] = idx;
-  const imgEl = document.getElementById(`cimg_${entry.id}_0`);
-  if (!imgEl) return;
-  const badge = document.querySelector(`#cimg_${entry.id} .card-count-badge`);
-  if (badge) badge.textContent = `${idx+1} / ${entry.fileIds.length}`;
-
-  try {
-    const url = await resolveFileUrl(entry.token || getConfig().token, entry.fileIds[idx]);
-    if (url && imgEl) {
-      imgEl.src = url;
-      imgEl.classList.remove('hidden');
-    }
-  } catch {}
-}
-
-function navCard(e, id, dir) {
+function navCard(e,id,dir){
   e.stopPropagation();
-  const entry = archive.find(x => x.id == id);
-  if (!entry) return;
-  let cur = (cardImgIdx[id] || 0) + dir;
-  if (cur < 0) cur = entry.fileIds.length - 1;
-  if (cur >= entry.fileIds.length) cur = 0;
-  const imgEl = document.getElementById(`cimg_${id}_0`);
-  if (imgEl) { imgEl.classList.add('hidden'); imgEl.src = ''; }
-  loadCardImage(entry, cur);
+  const entry=archive.find(x=>x.id==id);if(!entry)return;
+  const fids=entry.fids||[];
+  let cur=(cImgIdx[id]||0)+dir;
+  if(cur<0)cur=fids.length-1;if(cur>=fids.length)cur=0;
+  const el=document.getElementById(`ci_${id}_0`);
+  if(el){el.classList.add('hide');el.src='';}
+  loadCardImg(entry,cur);
 }
+function openEditCard(e,id){e.stopPropagation();openEdit(id);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-function openEditCard(e, id) {
+/* ═══════════════════════════════════════════
+   DELETE ENTRY
+═══════════════════════════════════════════ */
+async function delEntry(e,id){
   e.stopPropagation();
-  openEdit(id);
+  const entry=archive.find(x=>x.id===id);if(!entry)return;
+  const ok=await confirm2(`Hapus arsip "${entry.customer}"?`,'Data arsip akan dihapus. Foto di Telegram tidak terhapus.');
+  if(!ok)return;
+  archive=archive.filter(x=>x.id!==id);
+  saveAll();renderGrid();toast('🗑 Arsip dihapus.','ok');
+}
+async function delFromMod(){
+  if(!modEntry)return;
+  const entry=modEntry;closeMod();
+  await delay(200);
+  const ok=await confirm2(`Hapus arsip "${entry.customer}"?`,'Data arsip akan dihapus. Foto di Telegram tidak terhapus.');
+  if(!ok)return;
+  archive=archive.filter(x=>x.id!==entry.id);
+  saveAll();renderGrid();toast('🗑 Arsip dihapus.','ok');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  DELETE
-// ═══════════════════════════════════════════════════════════
-async function deleteEntry(e, id) {
-  e.stopPropagation();
-  const entry = archive.find(x => x.id === id);
-  if (!entry) return;
-  const ok = await confirm2(
-    `Hapus arsip "${entry.customer}"?`,
-    `Foto di Telegram tidak akan terhapus, hanya data arsip yang dihapus.`
-  );
-  if (!ok) return;
-  archive = archive.filter(x => x.id !== id);
-  saveArchive(true);
-  renderGrid();
-  toast('🗑 Arsip dihapus.', 'success');
-}
-
-async function deleteEntryFromModal() {
-  if (!modalEntry) return;
-  const entry = modalEntry;
-  closeModalDirect();
-  await new Promise(r => setTimeout(r, 200));
-  const ok = await confirm2(
-    `Hapus arsip "${entry.customer}"?`,
-    `Foto di Telegram tidak akan terhapus, hanya data arsip yang dihapus.`
-  );
-  if (!ok) return;
-  archive = archive.filter(x => x.id !== entry.id);
-  saveArchive(true);
-  renderGrid();
-  toast('🗑 Arsip dihapus.', 'success');
-}
-
-// ═══════════════════════════════════════════════════════════
-//  SORT
-// ═══════════════════════════════════════════════════════════
-function toggleSort() {
-  sortDesc = !sortDesc;
-  document.getElementById('sortBtn').textContent = sortDesc ? '↓ Terbaru' : '↑ Terlama';
+/* ═══════════════════════════════════════════
+   SORT
+═══════════════════════════════════════════ */
+function toggleSort(){
+  sortDesc=!sortDesc;
+  document.getElementById('sortBtn').textContent=sortDesc?'↓ Terbaru':'↑ Terlama';
   renderGrid();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  MODAL / LIGHTBOX
-// ═══════════════════════════════════════════════════════════
-let modalEntry = null;
-let modalImgIdx = 0;
-
-async function openModal(id) {
-  const entry = archive.find(e => e.id === id);
-  if (!entry) return;
-  modalEntry = entry;
-  modalImgIdx = 0;
-
-  document.getElementById('modalTitle').textContent = entry.customer;
-  document.getElementById('modalMainImg').src = '';
-
-  const thumbsEl = document.getElementById('modalThumbs');
-  thumbsEl.innerHTML = entry.fileIds.map((fid, i) =>
-    `<img class="modal-thumb skeleton ${i===0?'active':''}" id="mthumb_${i}" src="" alt="foto ${i+1}" onclick="switchModalImg(${i})" />`
+/* ═══════════════════════════════════════════
+   MODAL LIGHTBOX
+═══════════════════════════════════════════ */
+async function openMod(id){
+  const e=archive.find(x=>x.id===id);if(!e)return;
+  modEntry=e;modIdx=0;
+  document.getElementById('modTtl').textContent=e.customer;
+  document.getElementById('modImg').src='';
+  const fids=e.fids||[];
+  document.getElementById('modThumbs').innerHTML=fids.map((f,i)=>
+    `<img class="thumb skel ${i===0?'act':''}" id="mth_${i}" src="" onclick="switchMod(${i})"/>`
   ).join('');
-
-  const dateStr = entry.date
-    ? new Date(entry.date).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})
-    : '—';
-  document.getElementById('modalMeta').innerHTML = `
-    <div><div class="meta-label">Pelanggan</div><div class="meta-value">${escHtml(entry.customer)}</div></div>
-    <div><div class="meta-label">Lokasi</div><div class="meta-value">${escHtml(entry.location||'—')}</div></div>
-    <div><div class="meta-label">Tanggal</div><div class="meta-value">${dateStr}</div></div>
-    <div><div class="meta-label">Keterangan</div><div class="meta-value">${escHtml(entry.note||'—')}</div></div>
-    <div><div class="meta-label">Jumlah Foto</div><div class="meta-value">${entry.fileIds.length} foto</div></div>
-  `;
-
-  document.getElementById('modalOverlay').classList.add('open');
-
-  const tok = entry.token || getConfig().token;
-  for (let i = 0; i < entry.fileIds.length; i++) {
-    const url = await resolveFileUrl(tok, entry.fileIds[i]);
-    const el = document.getElementById(`mthumb_${i}`);
-    if (el && url) { el.src = url; el.classList.remove('skeleton'); }
-    if (i === 0 && url) document.getElementById('modalMainImg').src = url;
+  const dt=e.date?new Date(e.date).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'—';
+  document.getElementById('modMeta').innerHTML=`
+    <div><div class="ml">Pelanggan</div><div class="mv">${esc(e.customer)}</div></div>
+    <div><div class="ml">Lokasi</div><div class="mv">${esc(e.location||'—')}</div></div>
+    <div><div class="ml">Tanggal</div><div class="mv">${dt}</div></div>
+    <div><div class="ml">Keterangan</div><div class="mv">${esc(e.note||'—')}</div></div>
+    <div><div class="ml">Jumlah Foto</div><div class="mv">${fids.length} foto</div></div>`;
+  document.getElementById('modalOv').classList.add('open');
+  const tok=e.tok||cfg().tok;
+  for(let i=0;i<fids.length;i++){
+    const u=await fileUrl(tok,fids[i]);
+    const th=document.getElementById(`mth_${i}`);
+    if(th&&u){th.src=u;th.classList.remove('skel');}
+    if(i===0&&u)document.getElementById('modImg').src=u;
   }
 }
+async function switchMod(i){
+  if(!modEntry)return;modIdx=i;
+  document.querySelectorAll('.thumb').forEach((el,j)=>el.classList.toggle('act',j===i));
+  const u=await fileUrl(modEntry.tok||cfg().tok,(modEntry.fids||[])[i]);
+  if(u)document.getElementById('modImg').src=u;
+}
+function closeMod(){document.getElementById('modalOv').classList.remove('open');}
+function editFromMod(){if(!modEntry)return;closeMod();setTimeout(()=>openEdit(modEntry.id),150);}
+async function dlModZip(){if(modEntry)await doZip([modEntry],zipName(modEntry));}
 
-async function switchModalImg(i) {
-  if (!modalEntry) return;
-  modalImgIdx = i;
-  document.querySelectorAll('.modal-thumb').forEach((el, idx) => {
-    el.classList.toggle('active', idx === i);
-  });
-  const tok = modalEntry.token || getConfig().token;
-  const url = await resolveFileUrl(tok, modalEntry.fileIds[i]);
-  if (url) document.getElementById('modalMainImg').src = url;
-}
-
-function closeModal(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
-}
-function closeModalDirect() {
-  document.getElementById('modalOverlay').classList.remove('open');
-}
-function openFullImg(src) {
-  if (src) window.open(src, '_blank');
-}
-
-document.addEventListener('keydown', e => {
-  if (document.getElementById('confirmOverlay').classList.contains('open')) return;
-  const open = document.getElementById('modalOverlay').classList.contains('open');
-  if (!open || !modalEntry) return;
-  if (e.key === 'Escape') closeModalDirect();
-  if (e.key === 'ArrowRight') switchModalImg((modalImgIdx + 1) % modalEntry.fileIds.length);
-  if (e.key === 'ArrowLeft')  switchModalImg((modalImgIdx - 1 + modalEntry.fileIds.length) % modalEntry.fileIds.length);
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('cfmOv').classList.contains('open'))return;
+  if(!document.getElementById('modalOv').classList.contains('open')||!modEntry)return;
+  if(e.key==='Escape')closeMod();
+  if(e.key==='ArrowRight')switchMod((modIdx+1)%(modEntry.fids||[]).length);
+  if(e.key==='ArrowLeft')switchMod((modIdx-1+(modEntry.fids||[]).length)%(modEntry.fids||[]).length);
 });
 
-// ═══════════════════════════════════════════════════════════
-//  DOWNLOAD ZIP
-// ═══════════════════════════════════════════════════════════
-async function downloadEntryZip() {
-  if (!modalEntry) return;
-  await downloadEntryZipById(null, modalEntry.id);
-}
+/* ═══════════════════════════════════════════
+   EDIT ARSIP — dengan hapus & tambah foto
+═══════════════════════════════════════════ */
+async function openEdit(id){
+  const e=archive.find(x=>x.id===id);if(!e)return;
+  editId=id;editDel=new Set();editNewFiles=[];
+  document.getElementById('eCust').value=e.customer||'';
+  document.getElementById('eLoc').value=e.location||'';
+  document.getElementById('eDate').value=e.date||'';
+  document.getElementById('eNote').value=e.note||'';
+  document.getElementById('eprevRow').innerHTML='';
+  document.getElementById('editOv').classList.add('open');
 
-async function downloadEntryZipById(e, id) {
-  if (e) e.stopPropagation();
-  const entry = archive.find(x => x.id === id);
-  if (!entry) return;
-  await doDownloadZip([entry], `arsip_${sanitize(entry.customer)}_${entry.date || 'nodate'}.zip`);
-}
-
-async function downloadAllZip() {
-  if (archive.length === 0) { toast('Tidak ada arsip untuk didownload.', 'info'); return; }
-  await doDownloadZip(archive, `printarchive_semua_${new Date().toISOString().slice(0,10)}.zip`);
-}
-
-async function doDownloadZip(entries, zipName) {
-  const btn = document.getElementById('dlAllBtn');
-  const prevTxt = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Menyiapkan ZIP...'; }
-
-  toast('⏳ Mengunduh foto untuk ZIP... mohon tunggu.', 'info');
-
-  try {
-    const zip = new JSZip();
-    let total = 0;
-    entries.forEach(e => total += e.fileIds.length);
-    let done = 0;
-
-    for (const entry of entries) {
-      const folderName = `${sanitize(entry.customer)}_${entry.date || 'nodate'}`;
-      const folder = zip.folder(folderName);
-
-      // Tambahkan file keterangan
-      const info = [
-        `Nama Pelanggan : ${entry.customer}`,
-        `Lokasi         : ${entry.location || '-'}`,
-        `Tanggal        : ${entry.date || '-'}`,
-        `Keterangan     : ${entry.note || '-'}`,
-        `Jumlah Foto    : ${entry.fileIds.length}`,
-        `Upload         : ${new Date(entry.uploadedAt||entry.id).toLocaleString('id-ID')}`,
-      ].join('\n');
-      folder.file('keterangan.txt', info);
-
-      const tok = entry.token || getConfig().token;
-      for (let i = 0; i < entry.fileIds.length; i++) {
-        const url = await resolveFileUrl(tok, entry.fileIds[i]);
-        if (url) {
-          try {
-            const resp = await fetch(url);
-            const blob = await resp.blob();
-            const ext  = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
-            folder.file(`foto_${i+1}.${ext}`, blob);
-          } catch(e2) {
-            folder.file(`foto_${i+1}_error.txt`, 'Gagal mengunduh foto ini.');
-          }
-        }
-        done++;
-        if (btn) btn.innerHTML = `⏳ ${done}/${total} foto...`;
-      }
-    }
-
-    if (btn) btn.innerHTML = '📦 Membuat ZIP...';
-    const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(content);
-    a.download = zipName;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-
-    toast(`✅ ZIP berhasil diunduh: ${zipName}`, 'success');
-  } catch(err) {
-    toast('❌ Gagal membuat ZIP: ' + err.message, 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = prevTxt; }
+  // Render existing photos
+  const g=document.getElementById('epg');
+  const fids=e.fids||[];
+  g.innerHTML='<p style="font-size:.78rem;color:var(--muted)">⏳ Memuat foto...</p>';
+  const tok=e.tok||cfg().tok;
+  let html='';
+  for(let i=0;i<fids.length;i++){
+    const u=await fileUrl(tok,fids[i]);
+    html+=`<div class="ep" id="ep_${i}" onclick="togDel(${i})"><img src="${u||''}"/><button class="ep-del" title="Hapus">🗑</button></div>`;
   }
+  g.innerHTML=html||'<p style="color:var(--muted);font-size:.78rem">Tidak ada foto.</p>';
+}
+function togDel(i){
+  if(editDel.has(i)){editDel.delete(i);document.getElementById(`ep_${i}`)?.classList.remove('marked');}
+  else{editDel.add(i);document.getElementById(`ep_${i}`)?.classList.add('marked');}
 }
 
-function sanitize(str) {
-  return String(str || 'unknown').replace(/[^a-zA-Z0-9_\-\.]/g, '_').slice(0, 40);
+// Handle new files in edit
+function handleEditFiles(files){
+  for(const f of files)if(f.type.startsWith('image/'))editNewFiles.push(f);
+  renderEditPrev();
 }
-
-// ═══════════════════════════════════════════════════════════
-//  GPS
-// ═══════════════════════════════════════════════════════════
-async function getGPS() {
-  const btn = document.getElementById('gpsBtn');
-  const inp = document.getElementById('fLocation');
-  if (!navigator.geolocation) { toast('Browser tidak mendukung GPS.', 'error'); return; }
-  btn.disabled = true;
-  btn.textContent = '⏳...';
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
-    try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-      const d = await r.json();
-      inp.value = d.display_name || `${lat}, ${lng}`;
-    } catch { inp.value = `${lat}, ${lng}`; }
-    btn.disabled = false;
-    btn.textContent = '📍 GPS';
-    toast('✅ Lokasi berhasil diambil!', 'success');
-  }, err => {
-    toast('❌ Gagal ambil lokasi: ' + err.message, 'error');
-    btn.disabled = false;
-    btn.textContent = '📍 GPS';
-  }, { timeout: 10000 });
-}
-
-async function getGPSEdit() {
-  const inp = document.getElementById('editLocation');
-  if (!navigator.geolocation) { toast('Browser tidak mendukung GPS.', 'error'); return; }
-  toast('⏳ Mengambil lokasi...', 'info');
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
-    try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-      const d = await r.json();
-      inp.value = d.display_name || `${lat}, ${lng}`;
-    } catch { inp.value = `${lat}, ${lng}`; }
-    toast('✅ Lokasi berhasil diambil!', 'success');
-  }, err => {
-    toast('❌ Gagal ambil lokasi: ' + err.message, 'error');
-  }, { timeout: 10000 });
-}
-
-// ═══════════════════════════════════════════════════════════
-//  EDIT ARSIP
-// ═══════════════════════════════════════════════════════════
-let editEntryId = null;
-let editDeletedIndexes = new Set();
-
-async function openEdit(id) {
-  const entry = archive.find(e => e.id === id);
-  if (!entry) return;
-  editEntryId = id;
-  editDeletedIndexes = new Set();
-
-  document.getElementById('editCustomer').value = entry.customer || '';
-  document.getElementById('editLocation').value = entry.location || '';
-  document.getElementById('editDate').value     = entry.date     || '';
-  document.getElementById('editNote').value     = entry.note     || '';
-
-  const grid = document.getElementById('editPhotosGrid');
-  grid.innerHTML = '<p style="font-size:.8rem;color:var(--text-muted);">⏳ Memuat foto...</p>';
-  document.getElementById('editOverlay').classList.add('open');
-
-  const tok = entry.token || getConfig().token;
-  let html = '';
-  for (let i = 0; i < entry.fileIds.length; i++) {
-    const url = await resolveFileUrl(tok, entry.fileIds[i]);
-    html += `
-      <div class="edit-photo-item" id="ephoto_${i}" onclick="toggleDeletePhoto(${i})">
-        <img src="${url || ''}" alt="foto ${i+1}" />
-        <button class="del-photo-btn" title="Hapus foto ini">🗑</button>
-      </div>`;
-  }
-  grid.innerHTML = html || '<p style="color:var(--text-muted);font-size:.8rem;">Tidak ada foto.</p>';
-}
-
-function openEditFromModal() {
-  if (!modalEntry) return;
-  closeModalDirect();
-  setTimeout(() => openEdit(modalEntry.id), 150);
-}
-
-function toggleDeletePhoto(idx) {
-  if (editDeletedIndexes.has(idx)) {
-    editDeletedIndexes.delete(idx);
-    document.getElementById(`ephoto_${idx}`).classList.remove('marked-delete');
-  } else {
-    editDeletedIndexes.add(idx);
-    document.getElementById(`ephoto_${idx}`).classList.add('marked-delete');
-  }
-}
-
-function saveEdit() {
-  if (editEntryId === null) return;
-  const idx = archive.findIndex(e => e.id === editEntryId);
-  if (idx === -1) return;
-
-  const entry = archive[idx];
-  const remaining = entry.fileIds.filter((_, i) => !editDeletedIndexes.has(i));
-
-  archive[idx] = {
-    ...entry,
-    customer: document.getElementById('editCustomer').value.trim() || entry.customer,
-    location: document.getElementById('editLocation').value.trim(),
-    date:     document.getElementById('editDate').value || entry.date,
-    note:     document.getElementById('editNote').value.trim(),
-    fileIds:  remaining
-  };
-
-  saveArchive(true);
-  renderGrid();
-  closeEdit();
-  toast(`✅ Arsip diperbarui! ${editDeletedIndexes.size > 0 ? editDeletedIndexes.size + ' foto dihapus dari arsip.' : ''}`, 'success');
-}
-
-function closeEdit() {
-  document.getElementById('editOverlay').classList.remove('open');
-  editEntryId = null;
-  editDeletedIndexes = new Set();
-}
-
-function closeEditOutside(e) {
-  if (e.target === document.getElementById('editOverlay')) closeEdit();
-}
-
-// ═══════════════════════════════════════════════════════════
-//  TOAST
-// ═══════════════════════════════════════════════════════════
-let toastTimer;
-function toast(msg, type = 'info') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `toast ${type} show`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  CUSTOM CONFIRM DIALOG
-// ═══════════════════════════════════════════════════════════
-let _confirmResolve = null;
-
-function confirm2(title, msg, yesLabel = 'Hapus') {
-  return new Promise(resolve => {
-    _confirmResolve = resolve;
-    document.getElementById('confirmTitle').textContent = title;
-    document.getElementById('confirmMsg').textContent = msg;
-    document.getElementById('confirmYes').textContent = yesLabel;
-    document.getElementById('confirmOverlay').classList.add('open');
+function renderEditPrev(){
+  const row=document.getElementById('eprevRow');
+  row.innerHTML='';
+  editNewFiles.forEach((f,i)=>{
+    const u=URL.createObjectURL(f);
+    const d=document.createElement('div');
+    d.className='eprev';
+    d.innerHTML=`<img src="${u}"/><button class="eprev-del" onclick="rmEditFile(${i})">✕</button>`;
+    row.appendChild(d);
   });
 }
+function rmEditFile(i){editNewFiles.splice(i,1);renderEditPrev();}
 
-function confirmResolve(val) {
-  document.getElementById('confirmOverlay').classList.remove('open');
-  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
-}
+async function saveEdit(){
+  if(editId===null)return;
+  const idx=archive.findIndex(e=>e.id===editId);if(idx===-1)return;
+  const entry=archive[idx];
+  const tok=entry.tok||cfg().tok;
+  const c=cfg();
 
-// ═══════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════
-function hydrateArchive() {
-  const tok = getConfig().token;
-  archive = archive.map(e => ({ token: tok, ...e }));
-}
+  const btn=document.getElementById('eSaveBtn');
+  btn.disabled=true;btn.textContent='⏳ Menyimpan...';
 
-async function init() {
-  // Load dari localStorage dulu (cache lokal)
-  const local = localStorage.getItem('printarchive_data');
-  if (local) {
-    try { archive = JSON.parse(local); } catch { archive = []; }
-  }
-  hydrateArchive();
-  checkConfig();
-  renderGrid();
-
-  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
-
-  // Auto-sync dari Telegram jika ada config
-  const cfg = getConfig();
-  if (cfg.token && cfg.chatId) {
-    const banner = document.getElementById('syncBanner');
-    document.getElementById('syncBannerMsg').textContent = 'Memuat data terbaru dari Telegram...';
-    banner.classList.add('visible');
-    try {
-      const remote = await loadArchiveFromTelegramV2(cfg.token, cfg.chatId);
-      if (remote && Array.isArray(remote) && remote.length >= archive.length) {
-        archive = remote;
-        hydrateArchive();
-        localStorage.setItem('printarchive_data', JSON.stringify(archive));
-        renderGrid();
-      }
-    } catch(e) {
-      console.warn('Auto-sync gagal:', e);
-    } finally {
-      banner.classList.remove('visible');
+  try{
+    // Upload foto baru ke Telegram
+    const newFids=[];
+    for(let i=0;i<editNewFiles.length;i++){
+      const fd=new FormData();
+      fd.append('chat_id',c.cid);
+      fd.append('photo',editNewFiles[i]);
+      fd.append('caption',`👤 ${entry.customer} — foto tambahan ${i+1}`);
+      const res=await tgForm('sendPhoto',fd);
+      if(!res.ok)throw new Error('Gagal upload foto baru: '+res.description);
+      const ph=res.result.photo;
+      newFids.push(ph[ph.length-1].file_id);
     }
+
+    // Gabungkan: foto lama (yang tidak ditandai hapus) + foto baru
+    const remaining=(entry.fids||[]).filter((_,i)=>!editDel.has(i));
+    const combined=[...remaining,...newFids];
+
+    archive[idx]={
+      ...entry,
+      customer:document.getElementById('eCust').value.trim()||entry.customer,
+      location:document.getElementById('eLoc').value.trim(),
+      date:document.getElementById('eDate').value||entry.date,
+      note:document.getElementById('eNote').value.trim(),
+      fids:combined
+    };
+
+    saveAll();renderGrid();closeEdit();
+    toast(`✅ Arsip diperbarui! ${editDel.size?editDel.size+' foto dihapus, ':''} ${newFids.length?newFids.length+' foto ditambah.':''}`.trim(),'ok');
+  }catch(e){
+    toast('❌ '+e.message,'err');
+  }finally{
+    btn.disabled=false;btn.textContent='💾 Simpan Perubahan';
+  }
+}
+function closeEdit(){
+  document.getElementById('editOv').classList.remove('open');
+  editId=null;editDel=new Set();editNewFiles=[];
+}
+
+/* ═══════════════════════════════════════════
+   GPS
+═══════════════════════════════════════════ */
+async function geoLookup(lat,lng){
+  try{const r=await(await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)).json();return r.display_name||`${lat}, ${lng}`;}
+  catch{return `${lat}, ${lng}`;}
+}
+async function getGPS(){
+  if(!navigator.geolocation){toast('GPS tidak didukung.','err');return;}
+  const btn=document.getElementById('gpsBtn');btn.disabled=true;btn.textContent='⏳...';
+  navigator.geolocation.getCurrentPosition(async p=>{
+    const addr=await geoLookup(p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6));
+    document.getElementById('fLoc').value=addr;
+    btn.disabled=false;btn.textContent='📍 GPS';toast('✅ Lokasi didapat!','ok');
+  },err=>{toast('❌ '+err.message,'err');btn.disabled=false;btn.textContent='📍 GPS';},{timeout:10000});
+}
+async function getGPSEdit(){
+  if(!navigator.geolocation){toast('GPS tidak didukung.','err');return;}
+  toast('⏳ Mengambil lokasi...','inf');
+  navigator.geolocation.getCurrentPosition(async p=>{
+    document.getElementById('eLoc').value=await geoLookup(p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6));
+    toast('✅ Lokasi didapat!','ok');
+  },err=>toast('❌ '+err.message,'err'),{timeout:10000});
+}
+
+/* ═══════════════════════════════════════════
+   DOWNLOAD ZIP
+═══════════════════════════════════════════ */
+function zipName(e){return`arsip_${san(e.customer)}_${e.date||'nodate'}.zip`;}
+function san(s){return String(s||'x').replace(/[^a-zA-Z0-9_\-.]/g,'_').slice(0,40);}
+
+async function dlEntryZip(ev,id){
+  ev.stopPropagation();
+  const e=archive.find(x=>x.id===id);if(!e)return;
+  await doZip([e],zipName(e));
+}
+async function dlAllZip(){
+  if(!archive.length){toast('Tidak ada arsip.','inf');return;}
+  await doZip(archive,`printarchive_semua_${new Date().toISOString().slice(0,10)}.zip`);
+}
+
+async function doZip(entries,fname){
+  const btn=document.getElementById('dlAllBtn');
+  const prev=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML='⏳ Menyiapkan ZIP...';
+  toast('⏳ Mengunduh foto... mohon tunggu.','inf');
+  try{
+    const zip=new JSZip();
+    let tot=entries.reduce((s,e)=>s+(e.fids||[]).length,0),done=0;
+    for(const e of entries){
+      const folder=zip.folder(san(e.customer)+'_'+(e.date||'nodate'));
+      folder.file('keterangan.txt',[
+        `Nama Pelanggan : ${e.customer}`,
+        `Lokasi         : ${e.location||'-'}`,
+        `Tanggal        : ${e.date||'-'}`,
+        `Keterangan     : ${e.note||'-'}`,
+        `Jumlah Foto    : ${(e.fids||[]).length}`,
+        `Upload         : ${new Date(e.at||e.id).toLocaleString('id-ID')}`,
+      ].join('\n'));
+      const tok=e.tok||cfg().tok;
+      for(let i=0;i<(e.fids||[]).length;i++){
+        const u=await fileUrl(tok,e.fids[i]);
+        if(u){
+          try{
+            const bl=await(await fetch(u)).blob();
+            const ext=bl.type.includes('png')?'png':bl.type.includes('webp')?'webp':'jpg';
+            folder.file(`foto_${i+1}.${ext}`,bl);
+          }catch{folder.file(`foto_${i+1}_error.txt`,'Gagal unduh.');}
+        }
+        done++;btn.innerHTML=`⏳ ${done}/${tot} foto...`;
+      }
+    }
+    btn.innerHTML='📦 Membuat file ZIP...';
+    const content=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(content);a.download=fname;a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+    toast(`✅ ZIP berhasil diunduh!`,'ok');
+  }catch(e){toast('❌ Gagal: '+e.message,'err');}
+  finally{btn.disabled=false;btn.innerHTML=prev;}
+}
+
+/* ═══════════════════════════════════════════
+   CONFIRM DIALOG
+═══════════════════════════════════════════ */
+let _cfmRes=null;
+function confirm2(ttl,msg,yes='Hapus'){
+  return new Promise(r=>{
+    _cfmRes=r;
+    document.getElementById('cfmTtl').textContent=ttl;
+    document.getElementById('cfmMsg').textContent=msg;
+    document.getElementById('cfmYes').textContent=yes;
+    document.getElementById('cfmOv').classList.add('open');
+  });
+}
+function cfmResolve(v){
+  document.getElementById('cfmOv').classList.remove('open');
+  if(_cfmRes){_cfmRes(v);_cfmRes=null;}
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let toastT;
+function toast(msg,type='inf'){
+  const el=document.getElementById('toastEl');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),4200);
+}
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+async function init(){
+  // Load dari localStorage dulu (offline-first)
+  const loc=loadLoc();
+  const tok=cfg().tok;
+  archive=loc.map(e=>({...e,tok:e.tok||tok}));
+  checkCfg();
+  renderGrid();
+  document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
+
+  // Auto-pull dari Telegram di background (silent)
+  const c=cfg();
+  if(c.tok&&c.cid){
+    showSyncInfo('Memuat data dari Telegram...');
+    try{
+      const remote=await pullArchive();
+      if(remote&&Array.isArray(remote)&&remote.length>=archive.length){
+        archive=remote.map(e=>({...e,tok:e.tok||c.tok}));
+        saveLoc();renderGrid();
+      }
+    }catch(_){}
+    finally{hideSyncInfo();}
   }
 }
 
-window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
 </html>
