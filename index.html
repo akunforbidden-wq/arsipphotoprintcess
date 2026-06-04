@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PrintArchive — Arsip Foto Pemasangan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #181818;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --accent: #f0c040;
+    --accent2: #e87040;
+    --text: #f0ece4;
+    --text-dim: #888;
+    --text-muted: #555;
+    --green: #4ade80;
+    --red: #f87171;
+    --radius: 10px;
+    --font-mono: 'DM Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(14,14,14,0.95);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo span { color: var(--accent); }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:.4; transform:scale(0.7); }
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .config-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: .75rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .config-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN LAYOUT ── */
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* ── CONFIG PANEL ── */
+  .config-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: none;
+  }
+  .config-panel.open { display: block; animation: slideDown .2s ease; }
+  @keyframes slideDown {
+    from { opacity:0; transform:translateY(-8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .config-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media(max-width:640px) { .config-grid { grid-template-columns: 1fr; } }
+  .field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .field-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .field-input:focus { border-color: var(--accent); }
+  .save-config-btn {
+    margin-top: 1rem;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .save-config-btn:hover { opacity: .85; }
+
+  /* ── UPLOAD CARD ── */
+  .upload-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .upload-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  @media(max-width:768px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .25s;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(240,192,64,.04);
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .drop-icon { font-size: 2rem; margin-bottom: .5rem; }
+  .drop-text { color: var(--text-dim); font-size: .9rem; }
+  .drop-text strong { color: var(--accent); }
+
+  /* Preview thumbnails */
+  .preview-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .preview-thumb {
+    position: relative;
+    width: 80px; height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .preview-thumb img { width:100%; height:100%; object-fit:cover; }
+  .preview-thumb .remove-thumb {
+    position: absolute; top:2px; right:2px;
+    background: rgba(0,0,0,.7);
+    color: var(--red);
+    border: none; border-radius: 4px;
+    width: 18px; height: 18px;
+    font-size: .7rem; line-height: 18px;
+    text-align: center; cursor: pointer;
+  }
+
+  .upload-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .9rem;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .upload-btn:hover { opacity: .88; }
+  .upload-btn:active { transform: scale(.97); }
+  .upload-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    background: var(--bg);
+    border-radius: 4px;
+    height: 6px;
+    margin: 10px 0;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    transition: width .3s ease;
+    width: 0%;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: .85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s ease;
+    max-width: 340px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+
+  /* ── FILTERS ── */
+  .filters-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 14px 9px 36px;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: .85rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute; left: 11px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: .85rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .sort-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: .85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+  }
+  .sort-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-family: var(--font-mono);
+    font-size: .75rem;
+    color: var(--text-dim);
+  }
+  .stat-chip strong { color: var(--accent); }
+
+  /* ── GRID ── */
+  .grid-header {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: .7rem;
+  }
+  .archive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.2rem;
+  }
+
+  /* ── CARD ── */
+  .archive-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .2s, border-color .2s, box-shadow .2s;
+    position: relative;
+  }
+  .archive-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  }
+  .card-images {
+    position: relative;
+    height: 180px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .card-images img {
+    position: absolute;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: opacity .3s;
+  }
+  .card-images img.hidden { opacity: 0; }
+  .card-count-badge {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    background: rgba(0,0,0,.75);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+  }
+  .card-img-nav {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .archive-card:hover .card-img-nav { opacity: 1; }
+  .img-nav-btn {
+    background: rgba(0,0,0,.6);
+    color: #fff;
+    border: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .card-body { padding: 1rem; }
+  .card-order {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .card-customer {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-desc {
+    font-size: .8rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-date {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    color: var(--text-muted);
+  }
+  .card-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: .65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+  .card-delete-btn {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(248,113,113,.15);
+    border: 1px solid rgba(248,113,113,.3);
+    color: var(--red);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: .65rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .2s;
+    font-family: var(--font-mono);
+  }
+  .archive-card:hover .card-delete-btn { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--text-muted);
+    display: none;
+  }
+  .empty-state.visible { display: block; }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .4; }
+  .empty-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: .5rem;
+    color: var(--text-dim);
+  }
+
+  /* ── MODAL / LIGHTBOX ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.9);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(8px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn .2s ease;
+  }
+  @keyframes modalIn {
+    from { opacity:0; transform:scale(.96); }
+    to   { opacity:1; transform:scale(1); }
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .2s;
+  }
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+  .modal-body { padding: 1.5rem; }
+  .modal-main-img {
+    width: 100%;
+    max-height: 440px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: var(--bg);
+    cursor: zoom-in;
+  }
+  .modal-thumbnails {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+  }
+  .modal-thumb {
+    width: 64px; height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .modal-thumb.active { border-color: var(--accent); }
+  .modal-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin-top: 1rem;
+  }
+  @media(max-width:500px) { .modal-meta-grid { grid-template-columns: 1fr; } }
+  .meta-item {}
+  .meta-label {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+  }
+  .meta-value {
+    font-size: .9rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* No config warning */
+  .no-config-warn {
+    background: rgba(248,113,113,.08);
+    border: 1px solid rgba(248,113,113,.3);
+    color: var(--red);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: .85rem;
+    margin-bottom: 1.5rem;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .no-config-warn.visible { display: flex; }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Print<span>Archive</span>
+  </div>
+  <div class="header-right">
+    <button class="config-btn" onclick="toggleConfig()">⚙ Konfigurasi Telegram</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- CONFIG PANEL -->
+  <div class="config-panel" id="configPanel">
+    <div class="config-title">⚙ Pengaturan Telegram Bot</div>
+    <div class="config-grid">
+      <div>
+        <label class="field-label">Bot Token</label>
+        <input class="field-input" id="cfgToken" type="password"
+          placeholder="1234567890:ABCdefGHIjklMNO..." />
+      </div>
+      <div>
+        <label class="field-label">Chat ID (Channel/Group)</label>
+        <input class="field-input" id="cfgChatId" type="text"
+          placeholder="-1001234567890" />
+      </div>
+    </div>
+    <button class="save-config-btn" onclick="saveConfig()">Simpan Konfigurasi</button>
+    <p style="margin-top:.75rem;font-size:.75rem;color:var(--text-muted);">
+      Token & Chat ID disimpan di localStorage browser Anda. Tidak dikirim ke server apapun selain Telegram API.
+    </p>
+  </div>
+
+  <!-- NO CONFIG WARNING -->
+  <div class="no-config-warn" id="noConfigWarn">
+    ⚠ Silakan isi Konfigurasi Telegram terlebih dahulu agar foto dapat diunggah.
+  </div>
+
+  <!-- UPLOAD CARD -->
+  <div class="upload-card">
+    <div class="upload-title">📸 Upload Foto Pemasangan</div>
+
+    <div class="form-row">
+      <div>
+        <label class="field-label">Nama Pelanggan</label>
+        <input class="field-input" id="fCustomer" type="text" placeholder="Budi Santoso" />
+      </div>
+      <div>
+        <label class="field-label">Lokasi Pemasangan</label>
+        <input class="field-input" id="fLocation" type="text" placeholder="Jl. Malioboro No. 10" />
+      </div>
+      <div>
+        <label class="field-label">Tanggal Pemasangan</label>
+        <input class="field-input" id="fDate" type="date" />
+      </div>
+    </div>
+
+    <div class="form-row" style="grid-template-columns:1fr;">
+      <div>
+        <label class="field-label">Keterangan</label>
+        <input class="field-input" id="fNote" type="text" placeholder="Opsional..." />
+      </div>
+    </div>
+
+    <!-- DROP ZONE -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*" multiple
+        onchange="handleFiles(this.files)" />
+      <div class="drop-icon">🖼️</div>
+      <div class="drop-text">
+        <strong>Klik atau drag foto</strong> ke sini<br/>
+        <span style="font-size:.75rem;color:var(--text-muted);">Multiple foto didukung · JPG, PNG, WEBP</span>
+      </div>
+    </div>
+
+    <!-- PREVIEW THUMBNAILS -->
+    <div class="preview-row" id="previewRow"></div>
+
+    <!-- PROGRESS -->
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div id="progressLabel" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem;"></div>
+
+    <button class="upload-btn" id="uploadBtn" onclick="startUpload()">
+      📤 Upload ke Telegram
+    </button>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text"
+        placeholder="Cari pelanggan, lokasi..."
+        oninput="renderGrid()" />
+    </div>
+
+    <button class="sort-btn" id="sortBtn" onclick="toggleSort()">↓ Terbaru</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar" id="statsBar"></div>
+
+  <!-- GRID HEADER -->
+  <div class="grid-header">Arsip Foto</div>
+
+  <!-- ARCHIVE GRID -->
+  <div class="archive-grid" id="archiveGrid"></div>
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">📂</div>
+    <div class="empty-title">Arsip masih kosong</div>
+    <p>Upload foto pemasangan pertama Anda di atas.</p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- LIGHTBOX MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Detail Pemasangan</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body">
+      <img class="modal-main-img" id="modalMainImg" src="" alt=""
+        onclick="openFullImg(this.src)" />
+      <div class="modal-thumbnails" id="modalThumbs"></div>
+      <div class="modal-meta-grid" id="modalMeta"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────
+let selectedFiles = [];
+let archive = JSON.parse(localStorage.getItem('printarchive_data') || '[]');
+let sortDesc = true;
+
+// ─── CONFIG ─────────────────────────────────────────────────────────
+function getConfig() {
+  return {
+    token: localStorage.getItem('tg_token') || '',
+    chatId: localStorage.getItem('tg_chatid') || ''
+  };
+}
+function saveConfig() {
+  const token = document.getElementById('cfgToken').value.trim();
+  const chatId = document.getElementById('cfgChatId').value.trim();
+  if (!token || !chatId) { toast('Isi Token dan Chat ID terlebih dahulu.', 'error'); return; }
+  localStorage.setItem('tg_token', token);
+  localStorage.setItem('tg_chatid', chatId);
+  toast('Konfigurasi tersimpan!', 'success');
+  toggleConfig();
+  checkConfig();
+}
+function toggleConfig() {
+  const panel = document.getElementById('configPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    const cfg = getConfig();
+    document.getElementById('cfgToken').value = cfg.token;
+    document.getElementById('cfgChatId').value = cfg.chatId;
+  }
+}
+function checkConfig() {
+  const cfg = getConfig();
+  const warn = document.getElementById('noConfigWarn');
+  if (!cfg.token || !cfg.chatId) {
+    warn.classList.add('visible');
+  } else {
+    warn.classList.remove('visible');
+  }
+}
+
+// ─── FILE HANDLING ────────────────────────────────────────────────
+function handleFiles(files) {
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    selectedFiles.push(f);
+  }
+  renderPreviews();
+}
+
+function renderPreviews() {
+  const row = document.getElementById('previewRow');
+  row.innerHTML = '';
+  selectedFiles.forEach((f, i) => {
+    const url = URL.createObjectURL(f);
+    const div = document.createElement('div');
+    div.className = 'preview-thumb';
+    div.innerHTML = `<img src="${url}"/><button class="remove-thumb" onclick="removeFile(${i})">✕</button>`;
+    row.appendChild(div);
+  });
+}
+
+function removeFile(i) {
+  selectedFiles.splice(i, 1);
+  renderPreviews();
+}
+
+// Drag & Drop
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+// ─── UPLOAD ───────────────────────────────────────────────────────
+async function startUpload() {
+  const cfg = getConfig();
+  if (!cfg.token || !cfg.chatId) {
+    toast('Isi konfigurasi Telegram dulu!', 'error');
+    document.getElementById('configPanel').classList.add('open');
+    return;
+  }
+
+  const customer  = document.getElementById('fCustomer').value.trim();
+  const location  = document.getElementById('fLocation').value.trim();
+  const date      = document.getElementById('fDate').value;
+  const note      = document.getElementById('fNote').value.trim();
+
+  if (!customer) { toast('Isi Nama Pelanggan.', 'error'); return; }
+  if (selectedFiles.length === 0) { toast('Pilih minimal 1 foto.', 'error'); return; }
+
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Mengupload...`;
+
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar  = document.getElementById('progressBar');
+  const progressLbl  = document.getElementById('progressLabel');
+  progressWrap.classList.add('visible');
+
+  const fileIds = [];
+
+  try {
+    for (let i = 0; i < selectedFiles.length; i++) {
+      progressLbl.textContent = `Mengunggah foto ${i+1} dari ${selectedFiles.length}...`;
+      progressBar.style.width = ((i / selectedFiles.length) * 80) + '%';
+
+      const fd = new FormData();
+      fd.append('chat_id', cfg.chatId);
+      fd.append('photo', selectedFiles[i]);
+      fd.append('caption',
+        `👤 ${customer}\n📍 ${location || '-'}\n🗓 ${date || '-'}\n📝 ${note || '-'}`
+      );
+
+      const resp = await fetch(`https://api.telegram.org/bot${cfg.token}/sendPhoto`, {
+        method: 'POST',
+        body: fd
+      });
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.description || 'Gagal upload ke Telegram');
+
+      // ambil file_id terbesar (kualitas terbaik)
+      const photos = data.result.photo;
+      fileIds.push(photos[photos.length - 1].file_id);
+    }
+
+    progressBar.style.width = '100%';
+    progressLbl.textContent = 'Semua foto berhasil diunggah!';
+
+    // Simpan ke arsip lokal
+    const entry = {
+      id: Date.now(),
+      customer, location, date, note,
+      fileIds,
+      token: cfg.token,
+      uploadedAt: new Date().toISOString()
+    };
+    archive.unshift(entry);
+    saveArchive();
+    renderGrid();
+
+    toast(`✅ ${selectedFiles.length} foto berhasil diarsipkan!`, 'success');
+    resetForm();
+  } catch(err) {
+    toast('❌ ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📤 Upload ke Telegram';
+    setTimeout(() => {
+      progressWrap.classList.remove('visible');
+      progressBar.style.width = '0%';
+      progressLbl.textContent = '';
+    }, 2000);
+  }
+}
+
+function resetForm() {
+  ['fCustomer','fLocation','fDate','fNote'].forEach(id => document.getElementById(id).value = '');
+  selectedFiles = [];
+  renderPreviews();
+}
+
+// ─── ARCHIVE ─────────────────────────────────────────────────────
+function saveArchive() {
+  // Simpan tanpa token di field terpisah agar aman
+  localStorage.setItem('printarchive_data', JSON.stringify(archive));
+}
+
+function getFileUrl(entry, fileId) {
+  return `https://api.telegram.org/file/bot${entry.token}/${getFilePath(entry, fileId)}`;
+}
+
+// Cache file paths (Telegram requires getFile first)
+const pathCache = {};
+
+async function resolveFileUrl(token, fileId) {
+  if (pathCache[fileId]) return pathCache[fileId];
+  const resp = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
+  const data = await resp.json();
+  if (!data.ok) return null;
+  const url = `https://api.telegram.org/file/bot${token}/${data.result.file_path}`;
+  pathCache[fileId] = url;
+  return url;
+}
+
+// ─── RENDER GRID ──────────────────────────────────────────────────
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let list = archive.filter(e => {
+    if (q) {
+      const hay = `${e.customer} ${e.location} ${e.note}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  if (sortDesc) list = list.slice().sort((a,b) => b.id - a.id);
+  else          list = list.slice().sort((a,b) => a.id - b.id);
+  return list;
+}
+
+function renderGrid() {
+  const list  = getFiltered();
+  const grid  = document.getElementById('archiveGrid');
+  const empty = document.getElementById('emptyState');
+  const stats = document.getElementById('statsBar');
+
+  // Stats
+  const totalPhotos = archive.reduce((s,e) => s + e.fileIds.length, 0);
+  stats.innerHTML = `
+    <div class="stat-chip">Total Arsip: <strong>${archive.length}</strong></div>
+    <div class="stat-chip">Total Foto: <strong>${totalPhotos}</strong></div>
+    <div class="stat-chip">Ditampilkan: <strong>${list.length}</strong></div>
+  `;
+
+  if (list.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.add('visible');
+    return;
+  }
+  empty.classList.remove('visible');
+
+  grid.innerHTML = list.map((e, idx) => {
+    const dateStr = e.date ? new Date(e.date).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    return `
+    <div class="archive-card" onclick="openModal(${e.id})">
+      <button class="card-delete-btn" onclick="deleteEntry(event, ${e.id})">🗑 Hapus</button>
+      <div class="card-images" id="cimg_${e.id}">
+        <img src="" alt="" id="cimg_${e.id}_0" class="hidden" />
+        ${e.fileIds.length > 1 ? `
+          <div class="card-img-nav">
+            <button class="img-nav-btn" onclick="navCard(event,'${e.id}',-1)">‹</button>
+            <button class="img-nav-btn" onclick="navCard(event,'${e.id}',1)">›</button>
+          </div>
+          <div class="card-count-badge">1 / ${e.fileIds.length}</div>
+        ` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-customer">${e.customer}</div>
+        <div class="card-desc">${e.location || 'Lokasi tidak diisi'}</div>
+        <div class="card-footer">
+          <span class="card-date">📅 ${dateStr}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Lazy-load images per card
+  list.forEach(e => loadCardImage(e, 0));
+}
+
+const cardImgIdx = {};
+
+async function loadCardImage(entry, idx) {
+  if (!entry.fileIds[idx]) return;
+  cardImgIdx[entry.id] = idx;
+  const imgEl = document.getElementById(`cimg_${entry.id}_0`);
+  if (!imgEl) return;
+  // Update badge
+  const badge = document.querySelector(`#cimg_${entry.id} .card-count-badge`);
+  if (badge) badge.textContent = `${idx+1} / ${entry.fileIds.length}`;
+
+  try {
+    const url = await resolveFileUrl(entry.token || getConfig().token, entry.fileIds[idx]);
+    if (url && imgEl) {
+      imgEl.src = url;
+      imgEl.classList.remove('hidden');
+    }
+  } catch {}
+}
+
+function navCard(e, id, dir) {
+  e.stopPropagation();
+  const entry = archive.find(x => x.id == id);
+  if (!entry) return;
+  let cur = (cardImgIdx[id] || 0) + dir;
+  if (cur < 0) cur = entry.fileIds.length - 1;
+  if (cur >= entry.fileIds.length) cur = 0;
+  // Reset img
+  const imgEl = document.getElementById(`cimg_${id}_0`);
+  if (imgEl) { imgEl.classList.add('hidden'); imgEl.src = ''; }
+  loadCardImage(entry, cur);
+}
+
+function deleteEntry(e, id) {
+  e.stopPropagation();
+  if (!confirm('Hapus arsip ini? (Foto di Telegram tidak akan terhapus)')) return;
+  archive = archive.filter(x => x.id !== id);
+  saveArchive();
+  renderGrid();
+  toast('Arsip dihapus.', 'success');
+}
+
+// ─── SORT ────────────────────────────────────────────────────────
+function toggleSort() {
+  sortDesc = !sortDesc;
+  document.getElementById('sortBtn').textContent = sortDesc ? '↓ Terbaru' : '↑ Terlama';
+  renderGrid();
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────
+let modalEntry = null;
+let modalImgIdx = 0;
+
+async function openModal(id) {
+  const entry = archive.find(e => e.id === id);
+  if (!entry) return;
+  modalEntry = entry;
+  modalImgIdx = 0;
+
+  document.getElementById('modalTitle').textContent = entry.customer;
+  document.getElementById('modalMainImg').src = '';
+
+  const thumbsEl = document.getElementById('modalThumbs');
+  thumbsEl.innerHTML = entry.fileIds.map((fid, i) =>
+    `<img class="modal-thumb skeleton ${i===0?'active':''}" id="mthumb_${i}" src="" alt="foto ${i+1}" onclick="switchModalImg(${i})" />`
+  ).join('');
+
+  const dateStr = entry.date ? new Date(entry.date).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—';
+  document.getElementById('modalMeta').innerHTML = `
+    <div class="meta-item"><div class="meta-label">Pelanggan</div><div class="meta-value">${entry.customer}</div></div>
+    <div class="meta-item"><div class="meta-label">Lokasi</div><div class="meta-value">${entry.location||'—'}</div></div>
+    <div class="meta-item"><div class="meta-label">Tanggal</div><div class="meta-value">${dateStr}</div></div>
+    <div class="meta-item"><div class="meta-label">Keterangan</div><div class="meta-value">${entry.note||'—'}</div></div>
+    <div class="meta-item"><div class="meta-label">Jumlah Foto</div><div class="meta-value">${entry.fileIds.length} foto</div></div>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('open');
+
+  // Load semua thumbnail
+  const tok = entry.token || getConfig().token;
+  for (let i = 0; i < entry.fileIds.length; i++) {
+    const url = await resolveFileUrl(tok, entry.fileIds[i]);
+    const el = document.getElementById(`mthumb_${i}`);
+    if (el && url) { el.src = url; el.classList.remove('skeleton'); }
+    if (i === 0 && url) document.getElementById('modalMainImg').src = url;
+  }
+}
+
+async function switchModalImg(i) {
+  if (!modalEntry) return;
+  modalImgIdx = i;
+  document.querySelectorAll('.modal-thumb').forEach((el, idx) => {
+    el.classList.toggle('active', idx === i);
+  });
+  const tok = modalEntry.token || getConfig().token;
+  const url = await resolveFileUrl(tok, modalEntry.fileIds[i]);
+  if (url) document.getElementById('modalMainImg').src = url;
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function openFullImg(src) {
+  window.open(src, '_blank');
+}
+
+// Keyboard navigation in modal
+document.addEventListener('keydown', e => {
+  const open = document.getElementById('modalOverlay').classList.contains('open');
+  if (!open || !modalEntry) return;
+  if (e.key === 'Escape') closeModalDirect();
+  if (e.key === 'ArrowRight') switchModalImg((modalImgIdx + 1) % modalEntry.fileIds.length);
+  if (e.key === 'ArrowLeft')  switchModalImg((modalImgIdx - 1 + modalEntry.fileIds.length) % modalEntry.fileIds.length);
+});
+
+// ─── TOAST ────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+// Restore token in all archive entries (for photo retrieval)
+function hydrateArchive() {
+  const tok = getConfig().token;
+  archive = archive.map(e => ({ token: tok, ...e }));
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  hydrateArchive();
+  checkConfig();
+  renderGrid();
+  // Set today as default date
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+});
+</script>
+</body>
+</html>
