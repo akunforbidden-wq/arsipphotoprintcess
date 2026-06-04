@@ -630,6 +630,152 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── GPS BUTTON ── */
+  .loc-wrap { position: relative; }
+  .gps-btn {
+    position: absolute;
+    right: 8px; top: 50%; transform: translateY(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: .72rem;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .gps-btn:hover { border-color: var(--accent); background: rgba(240,192,64,.1); }
+  .gps-btn:disabled { opacity: .5; cursor: not-allowed; }
+  #fLocation { padding-right: 90px; }
+
+  /* ── EDIT MODAL ── */
+  .edit-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.92);
+    z-index: 600;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(8px);
+  }
+  .edit-overlay.open { display: flex; }
+  .edit-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn .2s ease;
+  }
+  .edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .edit-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--accent);
+  }
+  .edit-body { padding: 1.5rem; }
+  .edit-photos-label {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 1.2rem 0 .6rem;
+  }
+  .edit-photos-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .edit-photo-item {
+    position: relative;
+    width: 90px; height: 90px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    transition: border-color .2s;
+  }
+  .edit-photo-item img { width:100%; height:100%; object-fit:cover; }
+  .edit-photo-item .del-photo-btn {
+    position: absolute;
+    inset: 0;
+    background: rgba(248,113,113,.0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background .2s;
+    border: none;
+    color: transparent;
+  }
+  .edit-photo-item:hover .del-photo-btn {
+    background: rgba(248,113,113,.75);
+    color: #fff;
+  }
+  .edit-photo-item.marked-delete {
+    border-color: var(--red);
+    opacity: .5;
+  }
+  .edit-photo-item.marked-delete .del-photo-btn {
+    background: rgba(248,113,113,.6);
+    color: #fff;
+  }
+  .edit-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .btn-save-edit {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 7px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn-save-edit:hover { opacity: .85; }
+  .btn-cancel-edit {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 10px 18px;
+    border-radius: 7px;
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .modal-edit-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: .8rem;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all .2s;
+    margin-top: .5rem;
+  }
+  .modal-edit-btn:hover { border-color: var(--accent); }
+
   /* No config warning */
   .no-config-warn {
     background: rgba(248,113,113,.08);
@@ -711,7 +857,10 @@
       </div>
       <div>
         <label class="field-label">Lokasi Pemasangan</label>
-        <input class="field-input" id="fLocation" type="text" placeholder="Jl. Malioboro No. 10" />
+        <div class="loc-wrap">
+          <input class="field-input" id="fLocation" type="text" placeholder="Jl. Malioboro No. 10" />
+          <button class="gps-btn" id="gpsBtn" onclick="getGPS()" title="Ambil lokasi GPS">📍 GPS</button>
+        </div>
       </div>
       <div>
         <label class="field-label">Tanggal Pemasangan</label>
@@ -791,6 +940,49 @@
         onclick="openFullImg(this.src)" />
       <div class="modal-thumbnails" id="modalThumbs"></div>
       <div class="modal-meta-grid" id="modalMeta"></div>
+      <button class="modal-edit-btn" id="modalEditBtn" onclick="openEditFromModal()">✏️ Edit Arsip Ini</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-overlay" id="editOverlay" onclick="closeEditOutside(event)">
+  <div class="edit-box" id="editBox">
+    <div class="edit-header">
+      <div class="edit-title">✏️ Edit Arsip</div>
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="edit-body">
+      <div class="config-grid">
+        <div>
+          <label class="field-label">Nama Pelanggan</label>
+          <input class="field-input" id="editCustomer" type="text" />
+        </div>
+        <div>
+          <label class="field-label">Lokasi Pemasangan</label>
+          <div class="loc-wrap">
+            <input class="field-input" id="editLocation" type="text" />
+            <button class="gps-btn" onclick="getGPSEdit()" title="Ambil GPS">📍 GPS</button>
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Tanggal</label>
+          <input class="field-input" id="editDate" type="date" />
+        </div>
+        <div>
+          <label class="field-label">Keterangan</label>
+          <input class="field-input" id="editNote" type="text" />
+        </div>
+      </div>
+      <div class="edit-photos-label">📷 Foto — klik foto untuk tandai hapus</div>
+      <div class="edit-photos-grid" id="editPhotosGrid"></div>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem;">
+        Foto yang ditandai merah akan dihapus dari arsip (tidak terhapus di Telegram).
+      </p>
+      <div class="edit-footer">
+        <button class="btn-save-edit" onclick="saveEdit()">💾 Simpan Perubahan</button>
+        <button class="btn-cancel-edit" onclick="closeEdit()">Batal</button>
+      </div>
     </div>
   </div>
 </div>
@@ -805,17 +997,20 @@ let archive = JSON.parse(localStorage.getItem('printarchive_data') || '[]');
 let sortDesc = true;
 
 // ─── CONFIG ─────────────────────────────────────────────────────────
+const DEFAULT_TOKEN  = '8026645542:AAFkm_OsFO2cI8x3T1KPH6Afydr4hGYlROQ';
+const DEFAULT_CHATID = '-1004299885530';
+
 function getConfig() {
   return {
-    token: localStorage.getItem('tg_token') || '',
-    chatId: localStorage.getItem('tg_chatid') || ''
+    token:  localStorage.getItem('tg_token')  || DEFAULT_TOKEN,
+    chatId: localStorage.getItem('tg_chatid') || DEFAULT_CHATID
   };
 }
 function saveConfig() {
-  const token = document.getElementById('cfgToken').value.trim();
+  const token  = document.getElementById('cfgToken').value.trim();
   const chatId = document.getElementById('cfgChatId').value.trim();
   if (!token || !chatId) { toast('Isi Token dan Chat ID terlebih dahulu.', 'error'); return; }
-  localStorage.setItem('tg_token', token);
+  localStorage.setItem('tg_token',  token);
   localStorage.setItem('tg_chatid', chatId);
   toast('Konfigurasi tersimpan!', 'success');
   toggleConfig();
@@ -826,12 +1021,12 @@ function toggleConfig() {
   panel.classList.toggle('open');
   if (panel.classList.contains('open')) {
     const cfg = getConfig();
-    document.getElementById('cfgToken').value = cfg.token;
+    document.getElementById('cfgToken').value  = cfg.token;
     document.getElementById('cfgChatId').value = cfg.chatId;
   }
 }
 function checkConfig() {
-  const cfg = getConfig();
+  const cfg  = getConfig();
   const warn = document.getElementById('noConfigWarn');
   if (!cfg.token || !cfg.chatId) {
     warn.classList.add('visible');
@@ -1028,6 +1223,7 @@ function renderGrid() {
     return `
     <div class="archive-card" onclick="openModal(${e.id})">
       <button class="card-delete-btn" onclick="deleteEntry(event, ${e.id})">🗑 Hapus</button>
+      <button class="card-delete-btn" style="left:auto;right:8px;background:rgba(240,192,64,.15);border-color:rgba(240,192,64,.3);color:var(--accent);" onclick="openEditCard(event, ${e.id})">✏️ Edit</button>
       <div class="card-images" id="cimg_${e.id}">
         <img src="" alt="" id="cimg_${e.id}_0" class="hidden" />
         ${e.fileIds.length > 1 ? `
@@ -1083,6 +1279,11 @@ function navCard(e, id, dir) {
   const imgEl = document.getElementById(`cimg_${id}_0`);
   if (imgEl) { imgEl.classList.add('hidden'); imgEl.src = ''; }
   loadCardImage(entry, cur);
+}
+
+function openEditCard(e, id) {
+  e.stopPropagation();
+  openEdit(id);
 }
 
 function deleteEntry(e, id) {
@@ -1179,6 +1380,138 @@ function toast(msg, type = 'info') {
   el.className = `toast ${type} show`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ─── GPS LOKASI ───────────────────────────────────────────────────
+async function getGPS() {
+  const btn = document.getElementById('gpsBtn');
+  const inp = document.getElementById('fLocation');
+  if (!navigator.geolocation) { toast('Browser tidak mendukung GPS.', 'error'); return; }
+  btn.disabled = true;
+  btn.textContent = '⏳...';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+      const d = await r.json();
+      inp.value = d.display_name || `${lat}, ${lng}`;
+    } catch {
+      inp.value = `${lat}, ${lng}`;
+    }
+    btn.disabled = false;
+    btn.textContent = '📍 GPS';
+    toast('✅ Lokasi berhasil diambil!', 'success');
+  }, err => {
+    toast('❌ Gagal ambil lokasi: ' + err.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '📍 GPS';
+  }, { timeout: 10000 });
+}
+
+async function getGPSEdit() {
+  const inp = document.getElementById('editLocation');
+  if (!navigator.geolocation) { toast('Browser tidak mendukung GPS.', 'error'); return; }
+  toast('⏳ Mengambil lokasi...', 'info');
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+      const d = await r.json();
+      inp.value = d.display_name || `${lat}, ${lng}`;
+    } catch {
+      inp.value = `${lat}, ${lng}`;
+    }
+    toast('✅ Lokasi berhasil diambil!', 'success');
+  }, err => {
+    toast('❌ Gagal ambil lokasi: ' + err.message, 'error');
+  }, { timeout: 10000 });
+}
+
+// ─── EDIT ARSIP ───────────────────────────────────────────────────
+let editEntryId = null;
+let editDeletedIndexes = new Set();
+
+async function openEdit(id) {
+  const entry = archive.find(e => e.id === id);
+  if (!entry) return;
+  editEntryId = id;
+  editDeletedIndexes = new Set();
+
+  document.getElementById('editCustomer').value = entry.customer || '';
+  document.getElementById('editLocation').value = entry.location || '';
+  document.getElementById('editDate').value     = entry.date     || '';
+  document.getElementById('editNote').value     = entry.note     || '';
+
+  // Render foto
+  const grid = document.getElementById('editPhotosGrid');
+  grid.innerHTML = '<p style="font-size:.8rem;color:var(--text-muted);">⏳ Memuat foto...</p>';
+  document.getElementById('editOverlay').classList.add('open');
+
+  const tok = entry.token || getConfig().token;
+  let html = '';
+  for (let i = 0; i < entry.fileIds.length; i++) {
+    const url = await resolveFileUrl(tok, entry.fileIds[i]);
+    html += `
+      <div class="edit-photo-item" id="ephoto_${i}" onclick="toggleDeletePhoto(${i})">
+        <img src="${url || ''}" alt="foto ${i+1}" />
+        <button class="del-photo-btn" title="Hapus foto ini">🗑</button>
+      </div>`;
+  }
+  grid.innerHTML = html || '<p style="color:var(--text-muted);font-size:.8rem;">Tidak ada foto.</p>';
+}
+
+function openEditFromModal() {
+  if (!modalEntry) return;
+  closeModalDirect();
+  setTimeout(() => openEdit(modalEntry.id), 150);
+}
+
+function toggleDeletePhoto(idx) {
+  if (editDeletedIndexes.has(idx)) {
+    editDeletedIndexes.delete(idx);
+    document.getElementById(`ephoto_${idx}`).classList.remove('marked-delete');
+  } else {
+    editDeletedIndexes.add(idx);
+    document.getElementById(`ephoto_${idx}`).classList.add('marked-delete');
+  }
+}
+
+function saveEdit() {
+  if (editEntryId === null) return;
+  const idx = archive.findIndex(e => e.id === editEntryId);
+  if (idx === -1) return;
+
+  const entry = archive[idx];
+  const remaining = entry.fileIds.filter((_, i) => !editDeletedIndexes.has(i));
+  if (remaining.length === 0) {
+    if (!confirm('Semua foto akan dihapus. Lanjutkan? (Arsip tetap tersimpan tanpa foto)')) return;
+  }
+
+  archive[idx] = {
+    ...entry,
+    customer: document.getElementById('editCustomer').value.trim() || entry.customer,
+    location: document.getElementById('editLocation').value.trim(),
+    date:     document.getElementById('editDate').value || entry.date,
+    note:     document.getElementById('editNote').value.trim(),
+    fileIds:  remaining
+  };
+
+  saveArchive();
+  renderGrid();
+  closeEdit();
+  toast(`✅ Arsip diperbarui! ${editDeletedIndexes.size > 0 ? editDeletedIndexes.size + ' foto dihapus.' : ''}`, 'success');
+}
+
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('open');
+  editEntryId = null;
+  editDeletedIndexes = new Set();
+}
+
+function closeEditOutside(e) {
+  if (e.target === document.getElementById('editOverlay')) closeEdit();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────
